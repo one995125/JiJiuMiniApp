@@ -201,6 +201,12 @@
       </view>
       <text class="bar-text">总览</text>
     </view>
+    <view class="bar-item" bindtap="onShowInvitePanel">
+      <view class="bar-icon-wrap">
+        <t-icon name="share" size="44rpx" color="{{darkMode ? '#F4B75A' : '#D87218'}}" />
+      </view>
+      <text class="bar-text">邀请同桌</text>
+    </view>
     <button class="bar-item feedback-bar-btn" open-type="feedback" plain="true" hover-class="feedback-bar-btn--active">
       <view class="bar-icon-wrap">
         <t-icon name="service" size="44rpx" color="{{darkMode ? '#BBC0CB' : '#697080'}}" />
@@ -253,6 +259,99 @@
     </view>
   </view>
 </view>
+
+<!-- 房主共享管理：成员只能在独立只读页查看，本面板不向成员端暴露。 -->
+<block wx:if="{{showInvitePanel}}">
+<t-popup visible="{{showInvitePanel}}" placement="bottom" bind:visible-change="onInvitePanelChange">
+  <view class="invite-sheet {{darkMode ? 'dark' : ''}}">
+    <view class="ranking-handle"></view>
+    <view class="invite-head">
+      <view>
+        <text class="invite-title">邀请同桌只读查看</text>
+        <text class="invite-subtitle">账本仍只由你维护，同桌不能修改记录</text>
+      </view>
+      <view class="ranking-close" bindtap="onHideInvitePanel">
+        <t-icon name="close" size="40rpx" color="#999" />
+      </view>
+    </view>
+
+    <scroll-view class="invite-body" scroll-y>
+      <view class="invite-inner">
+        <view class="invite-code-card">
+          <view wx:if="{{!inviteCode}}" class="invite-empty">
+            <text class="invite-empty-title">生成一枚限时邀请口令</text>
+            <text class="invite-empty-desc">每次重新生成都会使上一枚口令失效</text>
+            <t-button theme="primary" block shape="round" loading="{{inviteCreating}}" bind:tap="onCreatePartyInvite">生成邀请</t-button>
+          </view>
+          <view wx:else>
+            <text class="invite-code-label">邀请口令</text>
+            <text class="invite-code-value">{{inviteCode}}</text>
+            <text class="invite-code-expiry">有效至 {{inviteExpiresText}}</text>
+            <view class="invite-code-actions">
+              <t-button theme="default" variant="outline" block bind:tap="onCopyInviteCode">复制口令</t-button>
+              <button class="invite-share-button" open-type="share" data-share-type="party-invite">发送给同桌</button>
+            </view>
+            <text class="regenerate-link" bindtap="onCreatePartyInvite">重新生成并作废旧口令</text>
+          </view>
+        </view>
+
+        <view wx:if="{{pendingTransfer}}" class="transfer-pending-card">
+          <text class="transfer-pending-title">等待对方确认交接</text>
+          <text class="transfer-pending-desc">确认前你仍是唯一房主，可随时取消；确认卡片 10 分钟内有效。</text>
+          <view class="transfer-pending-actions">
+            <button wx:if="{{handoverCode}}" class="handover-share-button" open-type="share" data-share-type="party-handover">发送确认卡片</button>
+            <t-button theme="danger" variant="outline" block bind:tap="onCancelTransfer">取消交接</t-button>
+          </view>
+        </view>
+
+        <view class="member-section">
+          <view class="member-section-head">
+            <text class="member-section-title">成员列表</text>
+            <text class="member-section-count">{{partyMemberRows.length}} 人</text>
+          </view>
+          <view wx:if="{{membersLoading}}" class="member-loading">正在读取成员…</view>
+          <view wx:else class="member-row" wx:for="{{partyMemberRows}}" wx:key="memberId">
+            <view class="member-main">
+              <view class="member-name-line">
+                <text class="member-name">{{item.claimedName}}</text>
+                <text wx:if="{{item.isOwner}}" class="owner-pill">房主</text>
+              </view>
+              <text class="member-id-note">{{item.isOwner ? '当前记账者' : (item.claimedPlayerId ? '已认领名单身份' : '尚未认领')}}</text>
+            </view>
+            <view class="member-actions">
+              <text class="member-action" bindtap="onOpenMemberClaim" data-member-id="{{item.memberId}}">更正</text>
+              <text wx:if="{{!item.isOwner}}" class="member-action" bindtap="onInitiateTransfer" data-member-id="{{item.memberId}}">转让</text>
+              <text wx:if="{{!item.isOwner}}" class="member-action member-action--danger" bindtap="onRemoveSharedMember" data-member-id="{{item.memberId}}">移除</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</t-popup>
+</block>
+
+<block wx:if="{{showMemberClaimPanel}}">
+<t-popup visible="{{showMemberClaimPanel}}" placement="bottom" bind:visible-change="onMemberClaimPanelChange">
+  <view class="member-claim-sheet {{darkMode ? 'dark' : ''}}">
+    <view class="ranking-handle"></view>
+    <text class="member-claim-title">更正成员认领</text>
+    <text class="member-claim-desc">已被其他成员认领的名字不可选择</text>
+    <scroll-view class="member-claim-list" scroll-y>
+      <view class="member-claim-row {{item.claimedByOther ? 'member-claim-row--disabled' : ''}} {{item.selected ? 'member-claim-row--selected' : ''}}"
+        wx:for="{{memberClaimRows}}" wx:key="id" bindtap="onSelectMemberClaim" data-id="{{item.id}}">
+        <text>{{item.name}}</text>
+        <text wx:if="{{item.claimedByOther}}" class="member-claim-state">已被认领</text>
+        <text wx:elif="{{item.selected}}" class="member-claim-state member-claim-state--selected">已选择</text>
+      </view>
+    </scroll-view>
+    <view class="member-claim-actions">
+      <t-button theme="default" variant="outline" block bind:tap="onClearMemberClaim">取消认领</t-button>
+      <t-button theme="primary" block loading="{{memberActionLoading}}" bind:tap="onSaveMemberClaim">确认更正</t-button>
+    </view>
+  </view>
+</t-popup>
+</block>
 
 <!-- Add Player Modal -->
 <view class="modal-overlay" wx:if="{{showPlayerDialog}}" bindtap="onHideAddPlayer" catchtouchmove="onPlayerDialogNoop">

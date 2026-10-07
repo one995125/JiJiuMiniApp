@@ -114,6 +114,31 @@
   gap: 10rpx;
 }
 
+.invite-sheet.dark,
+.member-claim-sheet.dark {
+  color: #F3F4F8;
+  background: #101218;
+}
+
+.invite-sheet.dark .invite-code-card,
+.invite-sheet.dark .transfer-pending-card,
+.invite-sheet.dark .member-section,
+.member-claim-sheet.dark .member-claim-row {
+  background: #1A1D27;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.invite-sheet.dark .invite-code-value {
+  color: #F4B75A;
+  background: #141722;
+}
+
+.member-claim-sheet.dark .member-claim-row--selected {
+  border-color: #F4B75A;
+  background: rgba(244, 183, 90, 0.1);
+}
+
 .tool-btn--static {
   pointer-events: none;
 }
@@ -1339,6 +1364,144 @@
   border-top: 1rpx solid rgba(31, 36, 48, 0.07);
   background: rgba(255, 255, 255, 0.96);
 }
+
+/* ===== 同桌只读共享（房主管理） ===== */
+.invite-sheet,
+.member-claim-sheet {
+  height: 86vh;
+  box-sizing: border-box;
+  border-radius: 28rpx 28rpx 0 0;
+  background: #F7F5F0;
+  color: #1F2430;
+}
+
+.invite-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding: 0 28rpx 22rpx;
+}
+
+.invite-title,
+.member-claim-title {
+  display: block;
+  font-size: 34rpx;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+.invite-subtitle,
+.member-claim-desc {
+  display: block;
+  margin-top: 8rpx;
+  color: #697080;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.invite-body { height: calc(86vh - 118rpx); }
+.invite-inner { padding: 0 24rpx calc(38rpx + env(safe-area-inset-bottom)); }
+
+.invite-code-card,
+.transfer-pending-card,
+.member-section {
+  margin-bottom: 20rpx;
+  padding: 26rpx;
+  border-radius: 22rpx;
+  background: #FFFFFF;
+  box-shadow: 0 6rpx 20rpx rgba(31, 36, 48, 0.055);
+}
+
+.invite-empty-title,
+.transfer-pending-title,
+.member-section-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.invite-empty-desc,
+.transfer-pending-desc {
+  display: block;
+  margin: 10rpx 0 22rpx;
+  color: #697080;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.invite-code-label,
+.invite-code-expiry {
+  display: block;
+  color: #697080;
+  font-size: 21rpx;
+}
+
+.invite-code-value {
+  display: block;
+  max-height: 146rpx;
+  margin: 12rpx 0;
+  padding: 16rpx;
+  overflow: hidden;
+  border-radius: 14rpx;
+  background: #FBFAF7;
+  color: #7B4A0D;
+  font-size: 21rpx;
+  line-height: 1.45;
+  word-break: break-all;
+}
+
+.invite-code-actions,
+.transfer-pending-actions,
+.member-claim-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.invite-share-button,
+.handover-share-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80rpx;
+  margin: 0;
+  padding: 0 18rpx;
+  border: 0;
+  border-radius: 999rpx;
+  background: #E9921B;
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.invite-share-button::after,
+.handover-share-button::after { border: 0; }
+.regenerate-link { display: block; margin-top: 20rpx; text-align: center; color: #B96508; font-size: 22rpx; }
+.transfer-pending-card { border: 1rpx solid rgba(233, 146, 27, 0.28); background: #FFF9EF; }
+
+.member-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12rpx; }
+.member-section-count { color: #A6ABB6; font-size: 21rpx; }
+.member-loading { padding: 30rpx 0; text-align: center; color: #8A909D; font-size: 23rpx; }
+.member-row { display: flex; align-items: center; min-height: 92rpx; border-top: 1rpx solid rgba(31, 36, 48, 0.07); }
+.member-main { flex: 1; min-width: 0; }
+.member-name-line { display: flex; align-items: center; gap: 8rpx; }
+.member-name { font-size: 26rpx; font-weight: 700; }
+.owner-pill { padding: 3rpx 10rpx; border-radius: 999rpx; background: #FFF0D5; color: #B96508; font-size: 18rpx; }
+.member-id-note { display: block; margin-top: 5rpx; color: #8A909D; font-size: 20rpx; }
+.member-actions { display: flex; align-items: center; gap: 16rpx; }
+.member-action { color: #B96508; font-size: 22rpx; font-weight: 700; }
+.member-action--danger { color: #D94A52; }
+
+.member-claim-sheet { height: auto; max-height: 82vh; padding: 18rpx 28rpx calc(28rpx + env(safe-area-inset-bottom)); }
+.member-claim-list { max-height: 560rpx; margin-top: 20rpx; }
+.member-claim-row { display: flex; align-items: center; justify-content: space-between; min-height: 78rpx; margin-bottom: 10rpx; padding: 0 18rpx; border: 1rpx solid rgba(31, 36, 48, 0.08); border-radius: 15rpx; background: #FFFFFF; font-size: 26rpx; }
+.member-claim-row--selected { border-color: #E9921B; background: #FFF5E6; }
+.member-claim-row--disabled { opacity: 0.45; }
+.member-claim-state { color: #8A909D; font-size: 21rpx; }
+.member-claim-state--selected { color: #B96508; font-weight: 700; }
 
 .poster-action-card {
   display: flex;
