@@ -4,7 +4,8 @@
     "pages/landing/landing",
     "pages/history/history",
     "pages/cloud-health/cloud-health",
-    "pages/record/record"
+    "pages/record/record",
+    "pages/party-view/party-view"
   ],
   "window": {
     "navigationBarTitleText": "聚会记账助手 - 酒局记酒与喝酒计量",

@@ -1,0 +1,13 @@
+{
+  "navigationBarTitleText": "同桌账本 · 只读",
+  "navigationStyle": "default",
+  "navigationBarBackgroundColor": "#F7F5F0",
+  "navigationBarTextStyle": "black",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#F7F5F0",
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-popup": "tdesign-miniprogram/popup/popup"
+  }
+}

@@ -1,0 +1,94 @@
+<view class="party-view-page">
+  <view class="hero">
+    <view class="hero-topline">
+      <text class="hero-title">同桌账本</text>
+      <text class="readonly-badge">只读</text>
+    </view>
+    <view wx:if="{{hasParty}}" class="hero-meta">
+      <text>{{statusText}} · {{durationText}}</text>
+      <text>1{{unit}} = {{unitToSip}}口</text>
+    </view>
+    <text class="hero-note">只有房主可以记账，你看到的是房主维护的实时结果</text>
+  </view>
+
+  <view wx:if="{{!hasParty && !loading}}" class="join-card">
+    <text class="section-title">加入同桌账本</text>
+    <text class="join-hint">粘贴房主发来的邀请口令。加入后只能查看，不能修改记录。</text>
+    <textarea class="invite-input" value="{{inviteInput}}" maxlength="{{300}}"
+      placeholder="在这里粘贴邀请口令" bindinput="onInviteInput" />
+    <t-button theme="primary" block shape="round" loading="{{joining}}" bind:tap="onJoinInputCode">加入查看</t-button>
+    <text wx:if="{{errorMessage}}" class="error-text">{{errorMessage}}</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="state-card">
+    <t-loading theme="circular" size="48rpx" text="正在读取账本" />
+  </view>
+
+  <view wx:if="{{hasParty}}" class="content">
+    <view wx:if="{{myRow}}" class="my-card">
+      <view class="my-card-head">
+        <text class="my-label">我的记录</text>
+        <text class="my-name">{{myRow.name}}</text>
+        <text class="claim-link" bindtap="openClaimPopup">更改认领</text>
+      </view>
+      <view class="metric-grid">
+        <view class="metric"><text class="metric-label">输</text><text class="metric-value">{{myRow.shu}}</text><text class="metric-unit">{{unit}}</text></view>
+        <view class="metric"><text class="metric-label">喝</text><text class="metric-value metric-value--green">{{myRow.he}}</text><text class="metric-unit">{{unit}}</text></view>
+        <view class="metric"><text class="metric-label">欠</text><text class="metric-value metric-value--red">{{myRow.qian}}</text><text class="metric-unit">{{unit}}</text></view>
+      </view>
+    </view>
+
+    <view wx:else class="unclaimed-card" bindtap="openClaimPopup">
+      <view><text class="unclaimed-title">还没有认领自己</text><text class="unclaimed-note">认领后可在顶部看到“我的记录”</text></view>
+      <text class="unclaimed-action">去认领</text>
+    </view>
+
+    <view class="section-card">
+      <view class="section-head"><text class="section-title">全员榜</text><text class="section-subtitle">按输的数量排序</text></view>
+      <view class="rank-row {{item.isMine ? 'rank-row--mine' : ''}}" wx:for="{{rows}}" wx:key="id">
+        <view class="rank-avatar" style="background: {{item.color}}">{{item.avatarText}}</view>
+        <view class="rank-main">
+          <view class="rank-name-line"><text class="rank-name">{{item.name}}</text><text wx:if="{{item.isMine}}" class="mine-pill">我</text></view>
+          <view class="title-row"><text class="title-pill" wx:for="{{item.titles}}" wx:for-item="title" wx:key="*this">{{title}}</text></view>
+        </view>
+        <view class="rank-metrics">
+          <text class="rank-shu">输{{item.shu}}</text><text class="rank-he">喝{{item.he}}</text><text class="rank-qian">欠{{item.qian}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-head"><text class="section-title">实时流水</text><text class="section-subtitle">最近 {{operations.length}} 条</text></view>
+      <view wx:if="{{operations.length === 0}}" class="empty-line">暂时还没有记录</view>
+      <view class="operation-row" wx:for="{{operations}}" wx:key="id">
+        <text class="operation-time">{{item.time}}</text>
+        <text class="operation-name">{{item.playerName}}</text>
+        <text class="operation-delta operation-delta--{{item.kind}}">{{item.deltaText}}</text>
+      </view>
+    </view>
+
+    <view class="footer-note">账本由房主维护 · 更新于 {{updatedAgoText}}</view>
+  </view>
+
+  <text wx:if="{{errorMessage && hasParty}}" class="floating-error">{{errorMessage}}</text>
+
+  <t-popup visible="{{showClaimPopup}}" placement="bottom" bind:visible-change="onClaimPopupChange">
+    <view class="claim-sheet">
+      <view class="claim-handle"></view>
+      <text class="claim-title">认领你在名单里的名字</text>
+      <text class="claim-desc">只使用房主录入的名字，不读取微信昵称或头像</text>
+      <scroll-view class="claim-list" scroll-y>
+        <view class="claim-row {{item.claimedByOther ? 'claim-row--disabled' : ''}} {{item.selected ? 'claim-row--selected' : ''}}"
+          wx:for="{{claimRows}}" wx:key="id" bindtap="onSelectClaim" data-id="{{item.id}}">
+          <text class="claim-name">{{item.name}}</text>
+          <text wx:if="{{item.claimedByOther}}" class="claim-state">已被认领</text>
+          <text wx:elif="{{item.selected}}" class="claim-state claim-state--selected">已选择</text>
+        </view>
+      </scroll-view>
+      <view class="claim-actions">
+        <t-button theme="default" variant="outline" block bind:tap="onSkipClaim">跳过</t-button>
+        <t-button theme="primary" block loading="{{claimSaving}}" disabled="{{!selectedClaimId}}" bind:tap="onSaveClaim">确认认领</t-button>
+      </view>
+    </view>
+  </t-popup>
+</view>
