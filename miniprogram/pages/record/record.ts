@@ -22,6 +22,8 @@ import {
   BadgeId,
   buildPartyOverview,
 } from '../../utils/party-overview'
+import { generatePartyPoster } from '../../utils/party-poster'
+import { PARTY_AUTO_END_PAUSE_THRESHOLD_MS } from '../../utils/party-lifecycle'
 import {
   getActivePartyFromCloud,
   saveActivePartyToCloud,
@@ -254,6 +256,8 @@ Component({
     selectedCount: 0,
     undoStack: [] as UndoEntry[],
     startTime: 0,
+    /** 已结算的后台暂停时长，用于总览与长时提醒扣除非活动时间。 */
+    pausedDurationMs: 0,
     showRanking: false,
     /** 45 分钟战绩提醒：只做本场轻量引导，不锁定记账、不记录分享结果。 */
     longSessionShareVisible: false,
@@ -317,6 +321,9 @@ Component({
     },
     /** 称号规则说明 popup 显隐，由总览页顶部 ❓ 按钮触发 */
     showMedalGuide: false,
+    /** 最近一次生成的战绩图临时路径；记录变化后清空，避免分享旧战绩。 */
+    posterTempFilePath: '',
+    posterGenerating: false,
     /** 新称号轻提示：只作为记账后的非阻塞反馈，不参与记录保存。 */
     titleUnlockVisible: false,
     titleUnlockNotice: {
@@ -343,6 +350,41 @@ Component({
       const n = this.data.players?.length || 0
       const title = n > 0 ? `${n}人聚会进行中` : '聚会记账助手'
       wx.setNavigationBarTitle({ title })
+
+      /** App.onShow 已完成 pausedAt 结算；页面恢复时同步累计暂停时长。 */
+      const localParty = loadParty()
+      const app = getApp<IAppOption>()
+      if (app.globalData.partyEndingByLifecycle && localParty?.endedAt) {
+        this.stopTimer()
+        if ((this as any)._cloudSyncTimer) {
+          clearTimeout((this as any)._cloudSyncTimer)
+          ;(this as any)._cloudSyncTimer = null
+        }
+        const thresholdHours = PARTY_AUTO_END_PAUSE_THRESHOLD_MS / (60 * 60 * 1000)
+        wx.showToast({
+          title: `暂停已超过${thresholdHours}小时，本场已自动结束`,
+          icon: 'none',
+          duration: 2200,
+        })
+        wx.navigateBack({
+          delta: 1,
+          success: () => {
+            app.globalData.partyEndingByLifecycle = false
+          },
+          fail: () => {
+            wx.reLaunch({
+              url: '/pages/index/index',
+              complete: () => {
+                app.globalData.partyEndingByLifecycle = false
+              },
+            })
+          },
+        })
+        return
+      }
+      if (localParty && !localParty.endedAt && rosterMatch(this.data.players, localParty.players)) {
+        this.setData({ pausedDurationMs: Math.max(Number(localParty.pausedDurationMs || 0), 0) })
+      }
     },
   },
 
@@ -416,6 +458,7 @@ Component({
             players: normalizedParty.players,
             settings: normalizedParty.settings,
             startTime: normalizedParty.startTime || Date.now(),
+            pausedDurationMs: Math.max(Number(normalizedParty.pausedDurationMs || 0), 0),
             playerAvatarPhotos: normalizedParty.playerAvatarPhotos || {},
           })
           if (normalized.changed) savePartyAsync(normalizedParty)
@@ -439,6 +482,7 @@ Component({
             players: party.players,
             settings: party.settings,
             startTime: party.startTime || Date.now(),
+            pausedDurationMs: 0,
             playerAvatarPhotos: {},
           })
 
@@ -477,6 +521,7 @@ Component({
             players: normalizedParty.players,
             settings: normalizedParty.settings,
             startTime: normalizedParty.startTime || Date.now(),
+            pausedDurationMs: Math.max(Number(normalizedParty.pausedDurationMs || 0), 0),
             playerAvatarPhotos: normalizedParty.playerAvatarPhotos || {},
           })
           this.updateDisplay()
@@ -505,6 +550,7 @@ Component({
         selectedIds,
         includeRanking: shouldUpdateRanking,
         startTime: this.data.startTime,
+        elapsedMs: this.getCurrentElapsedMs(),
         playerAvatarPhotos: this.data.playerAvatarPhotos || {},
       })
       if (!shouldUpdateRanking) {
@@ -632,6 +678,13 @@ Component({
 
     /* ===== Long Session Share Prompt ===== */
 
+    /** 当前真实活动时长：总跨度扣除 App 生命周期已经结算的后台暂停时间。 */
+    getCurrentElapsedMs(): number {
+      const startTime = Number(this.data.startTime || 0)
+      const pausedDurationMs = Math.max(Number(this.data.pausedDurationMs || 0), 0)
+      return startTime ? Math.max(Date.now() - startTime - pausedDurationMs, 0) : 0
+    },
+
     getLongSessionSharePromptKey(): string {
       const party = loadParty()
       if (party?.partyId) return `party:${party.partyId}`
@@ -663,7 +716,7 @@ Component({
 
     maybeShowLongSessionSharePrompt(elapsed?: number) {
       const startTime = Number(this.data.startTime || 0)
-      const duration = typeof elapsed === 'number' ? elapsed : Date.now() - startTime
+      const duration = typeof elapsed === 'number' ? elapsed : this.getCurrentElapsedMs()
       const milestone = Math.floor(duration / LONG_SESSION_SHARE_PROMPT_MS)
       if (
         !startTime ||
@@ -725,7 +778,7 @@ Component({
     /**
      * 左上角返回：仅暂时离开，不清除记录。
      * 用户可在首页通过「上次聚会未结束」横幅一键继续。
-     * 用户切后台、退出或杀掉小程序时，app 生命周期会自动封存本场聚会。
+     * 用户切后台时只暂停计时，返回后仍可继续；累计暂停超时才由 App 生命周期自动封存。
      */
     onBack() {
       playInteractionSound('tap')
@@ -1812,13 +1865,137 @@ Component({
       this.setData({ showMedalGuide: false })
     },
 
-    /* 总览不再走 canvas 保存图片：跨机型成功率太低，已改为引导用户长截屏发朋友圈。 */
+    /** 获取 type="2d" 的 Canvas 节点。画布位于总览弹层内，必须在弹层已渲染后调用。 */
+    getPartyPosterCanvas(): Promise<WechatMiniprogram.Canvas> {
+      return new Promise((resolve, reject) => {
+        this.createSelectorQuery()
+          .select('#partyPosterCanvas')
+          .fields({ node: true, size: true })
+          .exec(result => {
+            const canvas = result && result[0] && result[0].node as WechatMiniprogram.Canvas
+            if (canvas) {
+              resolve(canvas)
+              return
+            }
+            reject(new Error('CANVAS_NODE_UNAVAILABLE'))
+          })
+      })
+    },
+
+    /**
+     * 从当前真实酒局数据生成 750×1334 战绩长图。
+     * 失败只给提示并恢复按钮，不影响总览、记账或原有分享链路。
+     */
+    onGeneratePartyPoster() {
+      if (this.data.posterGenerating) return
+      const party = this.buildCurrentParty()
+      const overview = buildPartyOverview({
+        players: party.players,
+        settings: party.settings,
+        includeRanking: true,
+        startTime: party.startTime,
+        elapsedMs: this.getCurrentElapsedMs(),
+        playerAvatarPhotos: party.playerAvatarPhotos || {},
+      })
+      this.setData({ posterGenerating: true })
+      wx.showLoading({ title: '正在生成', mask: true })
+
+      // 新版基础库优先使用 getWindowInfo；旧版类型包或低版本基础库回退到
+      // getSystemInfoSync，仅用于取得 DPR，不读取或持久化其他设备信息。
+      const wxRuntime = wx as any
+      const dpr = typeof wxRuntime.getWindowInfo === 'function'
+        ? wxRuntime.getWindowInfo().pixelRatio
+        : wx.getSystemInfoSync().pixelRatio
+
+      this.getPartyPosterCanvas()
+        .then(canvas => generatePartyPoster({
+          canvas,
+          scope: this,
+          dpr,
+          party,
+          overview,
+          miniProgramCodePath: '/images/miniprogram-qrcode.png',
+        }))
+        .then(tempFilePath => {
+          this.setData({
+            posterTempFilePath: tempFilePath,
+            posterGenerating: false,
+          })
+          wx.hideLoading()
+          wx.showToast({ title: '战绩图已生成', icon: 'success' })
+        })
+        .catch(err => {
+          console.error('[party poster] generate failed', err)
+          this.setData({ posterGenerating: false })
+          wx.hideLoading()
+          wx.showToast({ title: '战绩图生成失败，请稍后重试', icon: 'none' })
+        })
+    },
+
+    savePosterFileToAlbum(filePath: string) {
+      wx.saveImageToPhotosAlbum({
+        filePath,
+        success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
+        fail: err => {
+          console.warn('[party poster] save album failed', err)
+          wx.showToast({ title: '保存失败，请稍后重试', icon: 'none' })
+        },
+      })
+    },
+
+    /** 相册权限被拒后提供明确且可点击的设置入口。 */
+    showAlbumSettingGuide() {
+      wx.showModal({
+        title: '需要相册权限',
+        content: '请在设置中允许“保存到相册”，然后重新点击保存。',
+        confirmText: '去设置',
+        cancelText: '暂不',
+        success: result => {
+          if (!result.confirm) return
+          wx.openSetting({
+            success: setting => {
+              if (setting.authSetting['scope.writePhotosAlbum'] && this.data.posterTempFilePath) {
+                this.savePosterFileToAlbum(this.data.posterTempFilePath)
+              }
+            },
+          })
+        },
+      })
+    },
+
+    /** 保存前先检查相册权限；首次请求 authorize，明确拒绝时引导打开设置。 */
+    onSavePartyPoster() {
+      const filePath = this.data.posterTempFilePath
+      if (!filePath) {
+        wx.showToast({ title: '请先生成战绩图', icon: 'none' })
+        return
+      }
+      wx.getSetting({
+        success: setting => {
+          const authorized = setting.authSetting['scope.writePhotosAlbum']
+          if (authorized === true) {
+            this.savePosterFileToAlbum(filePath)
+            return
+          }
+          if (authorized === false) {
+            this.showAlbumSettingGuide()
+            return
+          }
+          wx.authorize({
+            scope: 'scope.writePhotosAlbum',
+            success: () => this.savePosterFileToAlbum(filePath),
+            fail: () => this.showAlbumSettingGuide(),
+          })
+        },
+        fail: () => wx.showToast({ title: '无法读取相册权限，请稍后重试', icon: 'none' }),
+      })
+    },
 
     /* ===== Storage ===== */
 
     buildCurrentParty(): IPartyData {
       const prev = loadParty()
-      const { players, settings, startTime, playerAvatarPhotos } = this.data
+      const { players, settings, startTime, pausedDurationMs, playerAvatarPhotos } = this.data
       const updatedAt = new Date().toISOString()
       return {
         partyId: prev?.partyId || generateId(),
@@ -1831,6 +2008,7 @@ Component({
         settings,
         players,
         startTime,
+        pausedDurationMs: Math.max(Number(pausedDurationMs || prev?.pausedDurationMs || 0), 0),
         playerAvatarPhotos: playerAvatarPhotos || prev?.playerAvatarPhotos || {},
       }
     },
@@ -1838,6 +2016,7 @@ Component({
     saveCurrentParty(options?: { immediateCloud?: boolean }) {
       const party = this.buildCurrentParty()
       saveParty(party)
+      if (this.data.posterTempFilePath) this.setData({ posterTempFilePath: '' })
       this.queueCloudSave(party, !!options?.immediateCloud)
     },
 
@@ -1918,11 +2097,14 @@ Component({
 
     onShareAppMessage() {
       const n = this.data.players?.length || 0
+      const posterTempFilePath = this.data.posterTempFilePath
       trackGrowthEvent('share_clicked', { share_target: 'friend', entry_page: 'record' })
       return {
-        title: n > 0 ? SEO_COPY.activePartyShareTitle(n) : SEO_COPY.shareTitle,
+        title: posterTempFilePath && n > 0
+          ? `${n}人聚会战绩｜谁输多少一眼看清`
+          : (n > 0 ? SEO_COPY.activePartyShareTitle(n) : SEO_COPY.shareTitle),
         path: buildGrowthSharePath('/pages/index/index'),
-        imageUrl: SEO_COPY.shareImage,
+        imageUrl: posterTempFilePath || SEO_COPY.shareImage,
       }
     },
 

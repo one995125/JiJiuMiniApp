@@ -367,6 +367,28 @@
       注意：这里不绑定点击事件，避免用户误以为卡片本身可操作；转发截图时由微信识别二维码完成打开。
     -->
     <view class="ranking-sheet-footer">
+      <view class="poster-action-card">
+        <view class="poster-action-copy">
+          <text class="poster-action-title">战绩长图</text>
+          <text class="poster-action-desc">生成适合保存与转发的 9:16 战绩图</text>
+        </view>
+        <view wx:if="{{!posterTempFilePath}}"
+          class="poster-generate-btn {{posterGenerating ? 'poster-action-btn--disabled' : ''}}"
+          bindtap="onGeneratePartyPoster">
+          <t-icon name="image" size="30rpx" color="#FFFFFF" />
+          <text>{{posterGenerating ? '生成中' : '生成战绩图'}}</text>
+        </view>
+        <view wx:else class="poster-action-buttons">
+          <view class="poster-save-btn" bindtap="onSavePartyPoster">
+            <t-icon name="download" size="28rpx" color="#E9921B" />
+            <text>保存到相册</text>
+          </view>
+          <button class="poster-share-btn" open-type="share">
+            <t-icon name="share" size="28rpx" color="#FFFFFF" />
+            <text>分享给朋友</text>
+          </button>
+        </view>
+      </view>
       <view class="screenshot-guide">
         <view class="screenshot-guide-qrcode-wrap">
           <image class="screenshot-guide-qrcode" src="/images/miniprogram-qrcode.png" mode="aspectFit" />
@@ -378,6 +400,12 @@
         </view>
       </view>
     </view>
+
+    <!--
+      Canvas 必须保持已渲染才能通过 selectorQuery 取得 2D 节点；移到屏幕外而非 display:none。
+      逻辑尺寸固定 750×1334，真实 backing store 在生成时按设备 DPR 放大。
+    -->
+    <canvas type="2d" id="partyPosterCanvas" class="party-poster-canvas"></canvas>
   </view>
 </t-popup>
 </block>
