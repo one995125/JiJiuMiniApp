@@ -1,0 +1,181 @@
+<view class="page-root {{darkMode ? 'dark' : ''}}">
+<scroll-view class="scrollarea" scroll-y>
+  <view class="container">
+    <!-- Header -->
+    <view class="header" style="padding-top: {{headerSafeTop}}px;">
+      <view class="header-main">
+        <view class="brand-copy" bindlongpress="onOpenCloudHealthCheck">
+          <text class="header-title">记酒 · 聚会公平记账</text>
+          <text class="header-subtitle">谁输多少、完成多少，一眼看清</text>
+        </view>
+        <button class="feedback-chip" open-type="feedback" plain="true" hover-class="feedback-chip--active">
+          反馈
+        </button>
+        <view class="dark-toggle" bindtap="onToggleDarkMode">
+          <t-icon name="{{darkMode ? 'sunny' : 'moon'}}" size="32rpx" color="{{darkMode ? '#F4B75A' : '#697080'}}" />
+        </view>
+      </view>
+
+      <view class="history-entry history-entry--top" bindtap="onOpenHistory" hover-class="history-entry--active">
+        <view class="history-entry-icon">
+          <t-icon name="time" size="34rpx" color="{{darkMode ? '#F4B75A' : '#E9921B'}}" />
+        </view>
+        <view class="history-entry-body">
+          <text class="history-entry-title">聚会记录</text>
+          <text class="history-entry-desc">继续记账 / 查看历史</text>
+        </view>
+        <view class="history-entry-arrow">
+          <t-icon name="chevron-right" size="32rpx" color="#FFFFFF" />
+        </view>
+      </view>
+    </view>
+
+    <view class="header-metrics">
+      <view class="header-metric">
+        <text class="header-metric-value">{{players.length}}</text>
+        <text class="header-metric-label">人员</text>
+      </view>
+      <view class="header-metric">
+        <text class="header-metric-value">{{unitSet ? unit : '未定'}}</text>
+        <text class="header-metric-label">单位</text>
+      </view>
+      <view class="header-metric">
+        <text class="header-metric-value">{{unitSet ? unitToSip : '--'}}</text>
+        <text class="header-metric-label">口/{{unitSet ? unit : '单位'}}</text>
+      </view>
+    </view>
+
+    <!-- Players Section -->
+    <view class="section">
+      <view class="section-header">
+        <view class="section-title-wrap">
+          <text class="section-title">参与人员</text>
+        </view>
+        <t-tag theme="warning" variant="light" size="small">{{players.length}}/20</t-tag>
+      </view>
+
+      <!-- Player List -->
+      <view class="player-list" wx:if="{{players.length > 0}}">
+        <view class="player-item" wx:for="{{players}}" wx:key="id">
+          <app-avatar name="{{item.name}}" color="{{item.color}}" size="{{72}}" dark-mode="{{darkMode}}" />
+          <view class="player-info" bindtap="onEditPlayer" data-index="{{index}}">
+            <text class="player-name">{{item.name}}</text>
+            <text class="player-hint">· 轻触修改</text>
+          </view>
+          <view class="player-delete" catchtap="onDeletePlayer" data-index="{{index}}">
+            <t-icon name="close" size="36rpx" color="#A6ABB6" />
+          </view>
+        </view>
+      </view>
+
+      <!-- Empty State -->
+      <view wx:if="{{players.length === 0}}" class="empty-state">
+        <view class="empty-icon">
+          <t-icon name="usergroup" size="54rpx" color="#D9A455" />
+        </view>
+        <text class="empty-text">还没有参与人员</text>
+        <text class="empty-hint">点击下方按钮添加好友</text>
+      </view>
+
+      <!-- Add Button -->
+      <view class="add-area" wx:if="{{players.length < 20}}">
+        <view class="add-btn" bindtap="onShowAddDialog">
+          <t-icon name="add" size="36rpx" color="#E9921B" />
+          <text class="add-text">添加人员</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Unit Section -->
+    <view class="section">
+      <view class="section-header">
+        <view class="section-title-wrap">
+          <text class="section-title">惩罚单位</text>
+        </view>
+        <text wx:if="{{!unitSet}}" class="section-hint">请选择</text>
+      </view>
+
+      <view class="unit-tabs">
+        <view class="unit-tab {{unit === '杯' ? 'unit-tab--active' : ''}}"
+          bindtap="onSelectUnit" data-unit="杯">杯</view>
+        <view class="unit-tab {{unit === '瓶' ? 'unit-tab--active' : ''}}"
+          bindtap="onSelectUnit" data-unit="瓶">瓶</view>
+        <view class="unit-tab {{unit === '罐' ? 'unit-tab--active' : ''}}"
+          bindtap="onSelectUnit" data-unit="罐">罐</view>
+      </view>
+
+      <view wx:if="{{unitSet}}" class="sip-row">
+        <text class="sip-label">1{{unit}} =</text>
+        <view class="sip-value-display" bindtap="onShowSipEditor" hover-class="sip-value-display--active">
+          <text class="sip-value-text">{{unitToSip}}</text>
+        </view>
+        <text class="sip-label">口</text>
+      </view>
+
+      <view wx:if="{{unitSet}}" class="sip-preview">
+        <text class="preview-text">记录时每点一次「+1{{unit}}」，待完成数增加 {{unitToSip}} 口</text>
+      </view>
+    </view>
+
+    <view class="bottom-spacer"></view>
+    <view class="disclaimer">
+      <text class="disclaimer-text">可用饮料、积分或其他友好方式替代。仅限成年人健康娱乐，拒绝劝酒，饮酒勿驾车。</text>
+    </view>
+  </view>
+</scroll-view>
+
+<!-- Fixed Bottom Button -->
+<view class="bottom-bar">
+  <view wx:if="{{unitSet}}" class="bottom-bar-meta">
+    <text class="bottom-bar-meta-text">本场聚会：1{{unit}} = {{unitToSip}}口</text>
+  </view>
+  <t-button theme="primary" size="large" block shape="round" icon="play-circle"
+    disabled="{{players.length === 0}}" bind:tap="onStartParty">
+    开始聚会
+  </t-button>
+</view>
+
+<!-- Edit Sip Modal -->
+<view class="modal-overlay" wx:if="{{showSipEditor}}" bindtap="onHideSipEditor" catchtouchmove="noop">
+  <view class="modal-box" catchtap="noop">
+    <text class="modal-title">修改计量口数</text>
+    <view class="sip-editor-row">
+      <text class="sip-editor-label">1{{unit}} =</text>
+      <input class="modal-input sip-editor-input" type="number" placeholder="1-99"
+        value="{{sipDraft}}" maxlength="{{2}}"
+        bindinput="onSipDraftInput" bindconfirm="onConfirmSipEditor"
+        focus="{{showSipEditor}}" />
+      <text class="sip-editor-label">口</text>
+    </view>
+    <view class="modal-btns">
+      <t-button theme="default" variant="outline" size="small" bind:tap="onHideSipEditor">取消</t-button>
+      <t-button theme="primary" size="small" bind:tap="onConfirmSipEditor">确定</t-button>
+    </view>
+  </view>
+</view>
+
+<!-- Add/Edit Modal -->
+<view class="modal-overlay" wx:if="{{showDialog}}" bindtap="onHideDialog" catchtouchmove="noop">
+  <view class="modal-box" catchtap="noop">
+    <text class="modal-title">{{editIndex >= 0 ? '修改姓名' : '添加人员'}}</text>
+    <input class="modal-input" placeholder="请输入姓名（1-6个字）"
+      value="{{inputName}}" maxlength="{{6}}"
+      bindinput="onInputName" bindconfirm="onConfirmDialog"
+      focus="{{showDialog}}" />
+    <view class="modal-btns">
+      <t-button theme="default" variant="outline" size="small" bind:tap="onHideDialog">取消</t-button>
+      <t-button theme="primary" size="small" bind:tap="onConfirmDialog"
+        disabled="{{!inputName}}">确定</t-button>
+    </view>
+  </view>
+</view>
+
+<!-- 新用户首启欢迎弹窗 -->
+<block wx:if="{{showWelcomeDialog}}">
+<welcome-dialog
+  visible="{{showWelcomeDialog}}"
+  dark-mode="{{darkMode}}"
+  bind:confirm="onWelcomeConfirm"
+  bind:skip="onWelcomeSkip" />
+</block>
+</view>

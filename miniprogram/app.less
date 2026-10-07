@@ -1,0 +1,58 @@
+page {
+  /* 全局视觉 token：暖橙只承担主要行动色，状态色保持低饱和，避免界面过于嘈杂。 */
+  --app-brand: #E9921B;
+  --app-brand-weak: #FFF5E6;
+  --app-brand-soft: #FFE8C2;
+  --app-brand-strong: #B96508;
+  --app-success: #12A876;
+  --app-success-weak: rgba(18, 168, 118, 0.1);
+  --app-danger: #D94A52;
+  --app-danger-weak: rgba(217, 74, 82, 0.1);
+  --app-info: #2F6FE4;
+  --app-bg: #F7F5F0;
+  --app-bg-warm: #FFF8EC;
+  --app-surface: #FFFFFF;
+  --app-surface-soft: #FBFAF7;
+  --app-surface-raised: #FFFCF7;
+  --app-text: #1F2430;
+  --app-text-strong: #121723;
+  --app-text-subtle: #697080;
+  --app-text-muted: #A6ABB6;
+  --app-line: rgba(31, 36, 48, 0.08);
+  --app-radius-sm: 12rpx;
+  --app-radius-md: 16rpx;
+  --app-radius-lg: 22rpx;
+  --app-radius-xl: 28rpx;
+  --app-shadow-card: 0 6rpx 20rpx rgba(31, 36, 48, 0.055);
+  --app-shadow-float: 0 18rpx 44rpx rgba(31, 36, 48, 0.11);
+  --app-shadow-soft: 0 2rpx 10rpx rgba(31, 36, 48, 0.045);
+
+  --td-primary-color: var(--app-brand);
+  --td-primary-color-1: var(--app-brand-weak);
+  --td-primary-color-2: var(--app-brand-soft);
+  --td-primary-color-active: var(--app-brand-strong);
+  --td-primary-color-disabled: rgba(233, 146, 27, 0.5);
+  --td-primary-color-light: rgba(233, 146, 27, 0.1);
+
+  --td-error-color: var(--app-danger);
+  --td-success-color: var(--app-success);
+  --td-warning-color: #ED7B2F;
+
+  --td-bg-color: var(--app-bg);
+  --td-bg-color-secondary: var(--app-surface);
+  --td-text-color-primary: var(--app-text);
+  --td-text-color-secondary: var(--app-text-subtle);
+  --td-text-color-placeholder: var(--app-text-muted);
+  --td-border-color: var(--app-line);
+
+  background-color: var(--td-bg-color);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
+  color: var(--td-text-color-primary);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0;
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+

@@ -1,0 +1,25 @@
+{
+  "desc": "微信搜索收录规则：开放首页和搜索介绍页，记录页属于临时聚会状态页，不参与索引。",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "pages/index/index"
+    },
+    {
+      "action": "allow",
+      "page": "pages/landing/landing"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/history/history"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/record/record"
+    },
+    {
+      "action": "disallow",
+      "page": "*"
+    }
+  ]
+}

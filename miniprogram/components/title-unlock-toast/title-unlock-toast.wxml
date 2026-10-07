@@ -1,0 +1,18 @@
+<view
+  class="title-unlock-toast {{visible ? 'title-unlock-toast--visible' : ''}} {{darkMode ? 'title-unlock-toast--dark' : ''}} title-unlock-toast--{{notice.badgeId || 'default'}}"
+  aria-hidden="{{!visible}}"
+>
+  <view class="title-unlock-toast__inner">
+    <view class="title-unlock-toast__glow"></view>
+    <view class="title-unlock-toast__icon" style="background: {{notice.color || '#E9921B'}};">
+      <text class="title-unlock-toast__icon-text">{{notice.icon || '奖'}}</text>
+    </view>
+    <view class="title-unlock-toast__body">
+      <text class="title-unlock-toast__eyebrow">新称号</text>
+      <text class="title-unlock-toast__title">{{notice.title}}</text>
+    </view>
+    <view class="title-unlock-toast__badge" style="color: {{notice.color || '#E9921B'}};">
+      <text class="title-unlock-toast__badge-text">{{notice.badgeName}}</text>
+    </view>
+  </view>
+</view>

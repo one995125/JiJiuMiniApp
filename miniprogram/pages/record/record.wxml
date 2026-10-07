@@ -1,0 +1,469 @@
+<view class="page {{darkMode ? 'dark' : ''}}">
+  <!-- Navigation Bar -->
+  <view class="navbar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-back" bindtap="onBack">
+      <t-icon name="chevron-left" size="44rpx" color="{{darkMode ? '#D8D8D8' : '#333'}}" />
+    </view>
+  </view>
+
+  <!-- Toolbar：中间只保留主题切换；历史酒局恢复时不展示易误解的累计时长。 -->
+  <view class="toolbar">
+    <view class="toolbar-side toolbar-side--left">
+      <view class="tool-btn tool-btn--sort tool-btn--static">
+        <t-icon name="swap" size="40rpx" color="#8A909D" />
+        <text class="tool-text" style="color: #8A909D">入座顺序</text>
+      </view>
+    </view>
+    <view class="toolbar-mid">
+      <view class="toolbar-theme" bindtap="onToggleDarkMode" hover-class="toolbar-theme--active">
+        <t-icon name="{{darkMode ? 'sunny' : 'moon'}}" size="36rpx" color="{{darkMode ? '#F4B75A' : '#697080'}}" />
+      </view>
+    </view>
+    <view class="toolbar-side toolbar-side--right">
+      <view class="tool-btn" bindtap="onUndo">
+        <t-icon name="rollback" size="40rpx" color="{{undoStack.length > 0 ? '#E9921B' : '#A6ABB6'}}" />
+        <text class="tool-text" style="color: {{undoStack.length > 0 ? '#E9921B' : '#A6ABB6'}}">撤销</text>
+      </view>
+    </view>
+  </view>
+
+  <title-unlock-toast
+    visible="{{titleUnlockVisible}}"
+    notice="{{titleUnlockNotice}}"
+    dark-mode="{{darkMode}}" />
+
+  <!-- Player List -->
+  <scroll-view class="player-scroll" scroll-y="{{!isDragging}}"
+    bindtouchmove="onDragMove" bindtouchend="onDragEnd">
+    <view wx:for="{{displayPlayers}}" wx:key="id" class="drag-slot">
+      <!-- Drop indicator -->
+      <view wx:if="{{isDragging && dragOverIndex === index && dragOverIndex !== dragIndex && dragOverIndex !== dragIndex + 1}}" class="drop-indicator"></view>
+
+      <view class="player-card {{expandedId === item.id && !batchMode ? 'player-card--expanded' : ''}} {{item.selected ? 'player-card--selected' : ''}} {{isDragging && dragIndex === index ? 'player-card--dragging' : ''}}">
+        <!-- Main Row -->
+        <view class="card-main {{batchMode ? 'card-main--batch' : ''}}" bindtap="{{batchMode ? 'onToggleSelect' : 'onToggleExpand'}}" bindlongpress="onStartDrag" data-id="{{item.id}}">
+          <view class="card-main-left">
+            <!-- Batch Checkbox -->
+            <view wx:if="{{batchMode}}" class="batch-check {{item.selected ? 'batch-check--on' : ''}}">
+              <text wx:if="{{item.selected}}" class="check-mark">✓</text>
+            </view>
+
+            <view class="card-identity">
+              <view class="card-identity-head">
+                <!-- Avatar：轻触头像查看个人记录，显示逻辑由 app-avatar 统一维护。 -->
+                <view class="card-avatar-action" catchtap="onShowRecords" data-id="{{item.id}}">
+                  <app-avatar name="{{item.name}}" color="{{item.color}}" size="{{76}}" dark-mode="{{darkMode}}" interactive="{{true}}" />
+                </view>
+
+                <view class="card-body">
+                  <view class="card-name-row">
+                    <text class="card-name">{{item.name}}</text>
+                  </view>
+                  <view wx:if="{{!batchMode}}" class="card-medals">
+                    <t-tag wx:if="{{item.badgeUnlucky}}" t-class="medal medal--unlucky" size="small" shape="round" variant="light" theme="default">倒霉蛋</t-tag>
+                    <t-tag wx:if="{{item.badgeSea}}" t-class="medal medal--sea" size="small" shape="round" variant="light" theme="success">海量</t-tag>
+                    <t-tag wx:if="{{item.badgeDebt}}" t-class="medal medal--debt" size="small" shape="round" variant="light" theme="danger">养鱼达人</t-tag>
+                    <t-tag wx:if="{{item.badgeLucky}}" t-class="medal medal--lucky" size="small" shape="round" variant="light" theme="warning">幸运儿</t-tag>
+                    <t-tag wx:if="{{item.badgeOverspeed}}" t-class="medal medal--overspeed" size="small" shape="round" variant="light" theme="primary">不求人</t-tag>
+                  </view>
+                </view>
+              </view>
+
+              <!-- 普通卡片的统计标签显示在右下方；多选时保留在身份信息下方。 -->
+              <view class="card-tags">
+                <t-tag t-class="card-tag tag-total" size="small" shape="round" variant="light" theme="warning">共{{item.unitAmount}}</t-tag>
+                <t-tag t-class="card-tag tag-consumed" size="small" shape="round" variant="light" theme="danger">-{{item.consumedUnits}}</t-tag>
+              </view>
+            </view>
+          </view>
+
+          <!-- 常驻快捷操作：直接携带玩家 id 记入，不需要先展开或选择人员。 -->
+          <view wx:if="{{!batchMode}}" class="card-quick-grid">
+            <view class="card-quick-add" catchtap="onQuickAdd" catchlongpress="onQuickActionLongPress" data-id="{{item.id}}" data-amount="1"><text>+1口</text></view>
+            <view class="card-quick-add" catchtap="onQuickAdd" catchlongpress="onQuickActionLongPress" data-id="{{item.id}}" data-amount="5"><text>+5口</text></view>
+            <view class="card-quick-add" catchtap="onQuickAdd" catchlongpress="onQuickActionLongPress" data-id="{{item.id}}" data-amount="10"><text>+10口</text></view>
+            <view class="card-quick-add card-quick-add--unit" catchtap="onQuickAdd" catchlongpress="onQuickActionLongPress" data-id="{{item.id}}" data-amount="{{settings.unitToSip}}"><text>+1{{settings.unit}}</text></view>
+          </view>
+
+          <!-- 多选时不展示单人快捷区，保留称号概览作为中部内容。 -->
+          <view wx:if="{{batchMode}}" class="card-main-stats">
+            <view class="card-medals card-medals--batch">
+              <t-tag wx:if="{{item.badgeUnlucky}}" t-class="medal medal--unlucky" size="small" shape="round" variant="light" theme="default">倒霉蛋</t-tag>
+              <t-tag wx:if="{{item.badgeSea}}" t-class="medal medal--sea" size="small" shape="round" variant="light" theme="success">海量</t-tag>
+              <t-tag wx:if="{{item.badgeDebt}}" t-class="medal medal--debt" size="small" shape="round" variant="light" theme="danger">养鱼达人</t-tag>
+              <t-tag wx:if="{{item.badgeLucky}}" t-class="medal medal--lucky" size="small" shape="round" variant="light" theme="warning">幸运儿</t-tag>
+              <t-tag wx:if="{{item.badgeOverspeed}}" t-class="medal medal--overspeed" size="small" shape="round" variant="light" theme="primary">不求人</t-tag>
+            </view>
+          </view>
+
+          <view class="card-main-center">
+            <view class="card-amount">
+              <text class="amount-num">{{item.totalSips}}</text>
+              <text wx:if="{{quickFeedbackPlayerId === item.id}}"
+                class="quick-feedback {{quickFeedbackClass}}">
+                {{quickFeedbackText}}
+              </text>
+            </view>
+          </view>
+
+          <view class="card-main-right">
+            <view wx:if="{{!batchMode}}" class="card-quick-sub" catchtap="onQuickSub" catchlongpress="onQuickActionLongPress" data-id="{{item.id}}">
+              <text class="quick-sub-text">-1{{settings.unit}}</text>
+            </view>
+            <view wx:if="{{!batchMode}}" class="card-arrow">
+              <t-icon name="{{expandedId === item.id ? 'chevron-up' : 'chevron-down'}}" size="44rpx"
+                color="{{darkMode ? '#777' : '#ccc'}}" />
+            </view>
+          </view>
+        </view>
+
+        <!-- Operation Panel (expanded) -->
+        <view wx:if="{{expandedId === item.id && !batchMode}}" class="op-panel">
+          <!-- 快捷按钮已常驻卡片；展开区只负责自定义口数和人员管理。 -->
+          <view class="op-custom-row">
+            <text class="op-custom-label">+</text>
+            <input class="op-custom-input" type="number" placeholder="输入口数"
+              value="{{customSipAmount}}" bindinput="onCustomSipInput"
+              bindconfirm="onConfirmSip" confirm-type="done" />
+            <text class="op-custom-unit">口</text>
+          </view>
+          <!-- Confirm / Cancel：仅用于自定义口数。 -->
+          <view class="op-confirm-row" wx:if="{{effectivePendingAmount !== 0}}">
+            <view class="op-cancel-btn" bindtap="onCancelSip">
+              <text class="op-cancel-text">取消</text>
+            </view>
+            <view class="op-confirm-btn" bindtap="onConfirmSip">
+              <text class="op-confirm-text">✓ 确认 {{effectivePendingAmount > 0 ? '+' : ''}}{{effectivePendingAmount}}口</text>
+            </view>
+          </view>
+          <view class="op-remove" bindtap="onRemovePlayer" data-id="{{item.id}}">
+            <t-icon name="delete" size="44rpx" color="{{darkMode ? '#888' : '#ccc'}}" />
+            <text class="op-remove-text">移除此人</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- End-of-list drop indicator -->
+    <view wx:if="{{isDragging && dragOverIndex === displayPlayers.length}}" class="drop-indicator" style="margin: 0 24rpx;"></view>
+
+    <!-- Add Player Button -->
+    <view wx:if="{{!batchMode}}" class="add-player-btn" bindtap="onShowAddPlayer">
+      <t-icon name="add" size="44rpx" color="{{darkMode ? '#666' : '#ccc'}}" />
+    </view>
+
+    <!-- 使用 TDesign 分割线承接弱提示，降低长列表底部空白的突兀感。 -->
+    <view class="list-hint">
+      <t-divider t-class="record-guide-divider" t-class-content="record-divider-content" content="轻触头像查看记录 · 长按拖动调整顺序 · 点击展开更多操作" />
+    </view>
+
+    <view class="disclaimer">
+      <t-divider t-class="record-safety-divider" t-class-content="record-divider-content record-divider-content--safe" content="可用饮料或积分替代 · 仅限成年人健康娱乐 · 拒绝劝酒 · 饮酒勿驾车" />
+    </view>
+    <view class="bottom-safe-spacer {{batchMode ? 'bottom-safe-spacer--batch' : ''}} {{longSessionShareVisible && !batchMode ? 'bottom-safe-spacer--long-share' : ''}}"></view>
+  </scroll-view>
+
+  <!-- Long Session Share Prompt -->
+  <view wx:if="{{longSessionShareVisible && !batchMode}}" class="long-share-tip {{darkMode ? 'long-share-tip--dark' : ''}}">
+    <view class="long-share-mark">
+      <t-icon name="chart-bar" size="34rpx" color="#FFFFFF" />
+    </view>
+    <view class="long-share-copy">
+      <text class="long-share-title">点击总览查看战绩</text>
+    </view>
+    <view class="long-share-actions">
+      <view class="long-share-btn long-share-btn--ghost" bindtap="onLongSessionShareLater">
+        <text>稍后</text>
+      </view>
+      <view class="long-share-btn long-share-btn--primary" bindtap="onLongSessionShareOverview">
+        <text>总览</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Normal Bottom Bar -->
+  <view class="bottom-bar" wx:if="{{!batchMode}}">
+    <view class="bar-item" bindtap="onEnterBatchMode">
+      <view class="bar-icon-wrap">
+          <t-icon name="usergroup" size="44rpx" color="{{darkMode ? '#BBC0CB' : '#697080'}}" />
+      </view>
+      <text class="bar-text">多选</text>
+    </view>
+    <view class="bar-item" bindtap="onShowChangeUnit">
+      <view class="bar-icon-wrap">
+          <t-icon name="refresh" size="44rpx" color="{{darkMode ? '#BBC0CB' : '#697080'}}" />
+      </view>
+      <text class="bar-text">改计数</text>
+    </view>
+    <view class="bar-item" bindtap="onShowRanking">
+      <view class="bar-icon-wrap">
+          <t-icon name="chart-bar" size="44rpx" color="{{darkMode ? '#F4B75A' : '#D87218'}}" />
+      </view>
+      <text class="bar-text">总览</text>
+    </view>
+    <button class="bar-item feedback-bar-btn" open-type="feedback" plain="true" hover-class="feedback-bar-btn--active">
+      <view class="bar-icon-wrap">
+        <t-icon name="service" size="44rpx" color="{{darkMode ? '#BBC0CB' : '#697080'}}" />
+      </view>
+      <text class="bar-text">反馈</text>
+    </button>
+  </view>
+
+  <!-- Batch Bottom Bar -->
+  <view class="batch-bar" wx:if="{{batchMode}}">
+    <view class="batch-top">
+      <text class="batch-info">已选 {{selectedCount}} 人</text>
+      <text wx:if="{{effectiveBatchPendingAmount !== 0}}" class="batch-pending {{effectiveBatchPendingAmount > 0 ? 'pending-add' : 'pending-sub'}}">
+        {{effectiveBatchPendingAmount > 0 ? '+' : ''}}{{effectiveBatchPendingAmount}}口
+      </text>
+      <view class="batch-top-right">
+        <view class="batch-link batch-link--cancel" bindtap="onCancelBatchMode">
+          <text>取消</text>
+        </view>
+        <view class="batch-link" bindtap="onSelectAll">
+          <text>{{selectedCount === players.length ? '取消全选' : '全选'}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="batch-actions">
+      <view class="batch-btn batch-add" bindtap="onBatchAdd" data-amount="1">
+        <text>+1口</text>
+      </view>
+      <view class="batch-btn batch-add" bindtap="onBatchAdd" data-amount="10">
+        <text>+10口</text>
+      </view>
+      <view class="batch-btn batch-add" bindtap="onBatchAdd" data-amount="{{settings.unitToSip}}">
+        <text>+1{{settings.unit}}</text>
+      </view>
+      <view class="batch-btn batch-sub" bindtap="onBatchSub" data-amount="{{settings.unitToSip}}">
+        <text>-1{{settings.unit}}</text>
+      </view>
+    </view>
+    <view class="batch-custom-row">
+      <text class="batch-custom-label">+</text>
+      <input class="batch-custom-input" type="number" placeholder="输入口数"
+        value="{{batchCustomSipAmount}}" bindinput="onBatchCustomSipInput"
+        bindconfirm="onExitBatchMode" confirm-type="done" />
+      <text class="batch-custom-unit">口</text>
+    </view>
+    <view class="batch-done-row">
+      <view class="batch-btn batch-done--primary batch-done--full" bindtap="onExitBatchMode">
+        <text>确定</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- Add Player Modal -->
+<view class="modal-overlay" wx:if="{{showPlayerDialog}}" bindtap="onHideAddPlayer" catchtouchmove="onPlayerDialogNoop">
+  <view class="modal-box" catchtap="onPlayerDialogNoop">
+    <text class="modal-title">添加玩家</text>
+    <input class="modal-input" placeholder="请输入姓名（1-6个字）"
+      value="{{newPlayerName}}" maxlength="{{6}}"
+      bindinput="onNewPlayerInput" bindconfirm="onConfirmAddPlayer"
+      focus="{{showPlayerDialog}}" />
+    <view class="modal-btns">
+      <t-button theme="default" variant="outline" size="small" bind:tap="onHideAddPlayer">取消</t-button>
+      <t-button theme="primary" size="small" bind:tap="onConfirmAddPlayer"
+        disabled="{{!newPlayerName}}">加入</t-button>
+    </view>
+  </view>
+</view>
+
+<!-- Change Unit Modal -->
+<view class="modal-overlay" wx:if="{{showUnitDialog}}" bindtap="onHideChangeUnit" catchtouchmove="onPlayerDialogNoop">
+  <view class="modal-box" catchtap="onPlayerDialogNoop">
+    <text class="modal-title">更改计数</text>
+    <view class="unit-change-info">
+      <text class="unit-change-current">当前：1{{settings.unit}} = {{settings.unitToSip}}口</text>
+    </view>
+    <view class="unit-change-row">
+      <text class="unit-change-label">1{{settings.unit}} =</text>
+      <input class="modal-input unit-change-input" type="number" placeholder="输入新的口数"
+        value="{{newUnitToSip}}"
+        bindinput="onNewUnitInput" bindconfirm="onConfirmChangeUnit"
+        focus="{{showUnitDialog}}" />
+      <text class="unit-change-label">口</text>
+    </view>
+    <view class="unit-change-hint">
+      <text class="hint-text">修改后将按{{settings.unit}}数等比换算所有人的口数</text>
+    </view>
+    <view class="modal-btns">
+      <t-button theme="default" variant="outline" size="small" bind:tap="onHideChangeUnit">取消</t-button>
+      <t-button theme="primary" size="small" bind:tap="onConfirmChangeUnit"
+        disabled="{{!newUnitToSip}}">确认修改</t-button>
+    </view>
+  </view>
+</view>
+
+<!-- Ranking Popup -->
+<block wx:if="{{showRanking}}">
+<t-popup visible="{{showRanking}}" placement="bottom" bind:visible-change="onRankingChange">
+  <view class="ranking-sheet {{darkMode ? 'dark' : ''}}">
+    <view class="ranking-handle"></view>
+    <view class="ranking-head">
+      <view class="ranking-title-row">
+        <t-icon name="chart-bar" size="40rpx" color="#E9921B" />
+        <text class="ranking-title">总览</text>
+        <view class="ranking-medal-link" bindtap="onShowMedalGuide">
+          <t-icon name="help-circle" size="44rpx" color="#E9921B" />
+          <text class="ranking-medal-link-text">称号规则</text>
+        </view>
+      </view>
+      <view class="ranking-close" bindtap="onHideRanking">
+        <t-icon name="close" size="40rpx" color="#999" />
+      </view>
+    </view>
+
+    <scroll-view class="ranking-body" scroll-y>
+      <view class="ranking-inner">
+        <view wx:if="{{debtChampionHero}}" class="debt-champion-hero">
+          <text class="debt-champion-label">养鱼达人</text>
+          <view class="debt-champion-avatar-wrap" bindtap="onDebtChampionPickPhoto">
+            <app-avatar
+              name="{{debtChampionHero.name}}"
+              color="{{debtChampionHero.color}}"
+              photo-path="{{debtChampionHero.photoPath}}"
+              size="{{188}}"
+              dark-mode="{{darkMode}}"
+              interactive="{{true}}"
+              bind:imageerror="onDebtChampionPhotoError"
+            />
+          </view>
+            <text wx:if="{{debtChampionHero.photoPath}}" class="debt-champion-hint">轻触头像更换照片</text>
+            <text wx:else class="debt-champion-hint">轻触头像上传照片</text>
+            <text class="debt-champion-name">{{debtChampionHero.name}}</text>
+            <text class="debt-champion-caption">欠{{debtChampionHero.debtUnits}}{{settings.unit}}</text>
+          </view>
+
+        <view class="rank-row" wx:for="{{rankingTierGroups}}" wx:key="key">
+          <view class="rank-row-left">
+            <app-avatar name="{{item.players[0].name}}" color="{{item.players[0].color}}" size="{{68}}" dark-mode="{{darkMode}}" />
+            <view class="rank-row-info">
+              <text class="rank-name">{{item.players[0].name}}</text>
+              <view class="rank-row-medals">
+                <t-tag wx:if="{{item.players[0].badgeUnlucky}}" t-class="medal medal--unlucky medal--rank" size="small" shape="round" variant="light" theme="default">倒霉蛋</t-tag>
+                <t-tag wx:if="{{item.players[0].badgeSea}}" t-class="medal medal--sea medal--rank" size="small" shape="round" variant="light" theme="success">海量</t-tag>
+                <t-tag wx:if="{{item.players[0].badgeDebt}}" t-class="medal medal--debt medal--rank" size="small" shape="round" variant="light" theme="danger">养鱼达人</t-tag>
+                <t-tag wx:if="{{item.players[0].badgeLucky}}" t-class="medal medal--lucky medal--rank" size="small" shape="round" variant="light" theme="warning">幸运儿</t-tag>
+                <t-tag wx:if="{{item.players[0].badgeOverspeed}}" t-class="medal medal--overspeed medal--rank" size="small" shape="round" variant="light" theme="primary">不求人</t-tag>
+                <t-tag wx:if="{{item.players[0].badgeNpc}}" t-class="medal medal--npc medal--rank" size="small" shape="round" variant="light" theme="default">NPC</t-tag>
+              </view>
+            </view>
+          </view>
+          <view class="rank-row-right">
+            <text class="rank-cups--shu">{{item.shuPart}}</text>
+            <text class="rank-cups--he">{{item.hePart}}</text>
+            <text class="rank-cups--qian">{{item.qianPart}}</text>
+          </view>
+        </view>
+
+        <view class="ranking-scroll-bottom-spacer"></view>
+      </view>
+    </scroll-view>
+
+    <!--
+      底部地推引导：小程序码与“长按识别”文案一起进入截图。
+      注意：这里不绑定点击事件，避免用户误以为卡片本身可操作；转发截图时由微信识别二维码完成打开。
+    -->
+    <view class="ranking-sheet-footer">
+      <view class="screenshot-guide">
+        <view class="screenshot-guide-qrcode-wrap">
+          <image class="screenshot-guide-qrcode" src="/images/miniprogram-qrcode.png" mode="aspectFit" />
+        </view>
+        <view class="screenshot-guide-body">
+          <text class="screenshot-guide-title">长按识别二维码</text>
+          <text class="screenshot-guide-desc">使用小程序，一起查看酒局战绩</text>
+          <text class="screenshot-guide-note">截图发给朋友也能直接识别打开</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</t-popup>
+</block>
+
+<!-- Undo History Popup -->
+<block wx:if="{{showUndoPopup}}">
+<t-popup visible="{{showUndoPopup}}" placement="bottom" bind:visible-change="onUndoPopupChange">
+  <view class="undo-sheet {{darkMode ? 'dark' : ''}}">
+    <view class="ranking-handle"></view>
+    <view class="undo-head">
+      <view class="undo-title-row">
+        <t-icon name="rollback" size="44rpx" color="#E9921B" />
+        <text class="undo-title">操作记录</text>
+      </view>
+      <view class="ranking-close" bindtap="onHideUndoPopup">
+        <t-icon name="close" size="40rpx" color="#999" />
+      </view>
+    </view>
+    <scroll-view class="undo-body" scroll-y>
+      <view class="undo-inner">
+        <view wx:if="{{undoDisplayList.length === 0}}" class="records-empty">
+          <text class="records-empty-text">暂无可撤销的操作</text>
+        </view>
+        <view class="undo-item undo-item--{{item.kind}}" wx:for="{{undoDisplayList}}" wx:key="originalIndex"
+          bindtap="onUndoItem" data-index="{{item.originalIndex}}">
+          <view class="undo-desc-wrap">
+            <text class="undo-desc undo-desc--{{item.kind}}">{{item.description}}</text>
+          </view>
+          <view class="undo-action-btn">
+            <text class="undo-action-text">撤销</text>
+          </view>
+        </view>
+        <view class="undo-hint">
+          <text class="hint-text">点击撤销对应操作，其他操作不受影响</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</t-popup>
+</block>
+
+<!-- 称号规则说明（从总览 popup 顶部入口触发） -->
+<block wx:if="{{showMedalGuide}}">
+<medal-guide
+  visible="{{showMedalGuide}}"
+  dark-mode="{{darkMode}}"
+  settings="{{settings}}"
+  bind:close="onHideMedalGuide" />
+</block>
+
+<!-- Player Records Popup -->
+<block wx:if="{{recordPopup}}">
+<t-popup visible="{{recordPopup}}" placement="bottom" bind:visible-change="onRecordPopupChange">
+  <view class="records-sheet {{darkMode ? 'dark' : ''}}">
+    <view class="ranking-handle"></view>
+    <view class="records-head">
+      <text class="records-title">{{recordPopupName}} 的记录</text>
+      <view class="ranking-close" bindtap="onCloseRecordPopup">
+        <t-icon name="close" size="40rpx" color="#999" />
+      </view>
+    </view>
+    <scroll-view class="records-body" scroll-y>
+      <view class="records-inner">
+        <view wx:if="{{recordPopupList.length === 0}}" class="records-empty">
+          <text class="records-empty-text">暂无记录</text>
+        </view>
+        <view class="record-item {{rec.action === '+' ? 'record-add' : 'record-sub'}}"
+          wx:for="{{recordPopupList}}" wx:for-item="rec" wx:key="id">
+          <view class="record-action-icon">
+            <t-icon wx:if="{{rec.action === '+'}}" name="add" size="28rpx" color="#F5A623" />
+            <t-icon wx:else name="remove" size="28rpx" color="#E34D59" />
+          </view>
+          <view class="record-detail">
+            <text wx:if="{{rec.consumedUnitsDelta > 0}}" class="record-desc">-{{rec.consumedUnitsDelta}}{{settings.unit}}（{{rec.action}}{{rec.amount}}口）</text>
+            <text wx:else class="record-desc">{{rec.action}}{{rec.amount}}{{rec.unit}}</text>
+          </view>
+          <text class="record-time">{{rec.time}}</text>
+          <view class="record-revert-btn" catchtap="onRevertPlayerRecord" data-record-id="{{rec.id}}">
+            <text class="record-revert-text">撤回</text>
+          </view>
+        </view>
+        <view wx:if="{{recordPopupList.length > 0}}" class="records-hint">
+          <text>撤回后会重新计算该人员的总数、称号和排行</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</t-popup>
+</block>

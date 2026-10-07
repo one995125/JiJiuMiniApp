@@ -1,0 +1,14 @@
+{
+  "component": true,
+  "navigationBarTitleText": "聚会进行中 - 实时饮酒记账",
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-tag": "tdesign-miniprogram/tag/tag",
+    "t-divider": "tdesign-miniprogram/divider/divider",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "app-avatar": "../../components/app-avatar/app-avatar",
+    "medal-guide": "../../components/medal-guide/medal-guide",
+    "title-unlock-toast": "../../components/title-unlock-toast/title-unlock-toast"
+  }
+}

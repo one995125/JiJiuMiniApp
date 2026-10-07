@@ -1,0 +1,174 @@
+.title-unlock-toast {
+  position: fixed;
+  left: 72rpx;
+  right: 72rpx;
+  bottom: calc(214rpx + env(safe-area-inset-bottom));
+  z-index: 46;
+  pointer-events: none;
+  --unlock-soft: rgba(233, 146, 27, 0.12);
+  --unlock-tint: rgba(255, 249, 239, 0.96);
+  --unlock-border: rgba(233, 146, 27, 0.22);
+  --unlock-shadow: rgba(233, 146, 27, 0.18);
+}
+
+.title-unlock-toast__inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  min-height: 88rpx;
+  padding: 12rpx 14rpx;
+  box-sizing: border-box;
+  border: 2rpx solid var(--unlock-border);
+  border-radius: 24rpx;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.92), transparent 42%),
+    var(--unlock-tint);
+  box-shadow: 0 14rpx 34rpx var(--unlock-shadow), 0 4rpx 14rpx rgba(31, 36, 48, 0.08);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(18rpx) scale(0.96);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.title-unlock-toast--visible .title-unlock-toast__inner {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.title-unlock-toast__glow {
+  position: absolute;
+  top: -32rpx;
+  right: -18rpx;
+  width: 116rpx;
+  height: 116rpx;
+  border-radius: 50%;
+  background: var(--unlock-soft);
+}
+
+.title-unlock-toast__icon {
+  position: relative;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 8rpx 18rpx var(--unlock-shadow);
+}
+
+.title-unlock-toast__icon-text {
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.title-unlock-toast__body {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2rpx;
+}
+
+.title-unlock-toast__eyebrow {
+  font-size: 18rpx;
+  line-height: 24rpx;
+  color: rgba(31, 36, 48, 0.46);
+  font-weight: 800;
+}
+
+.title-unlock-toast__title {
+  max-width: 100%;
+  font-size: 27rpx;
+  line-height: 34rpx;
+  color: var(--app-text-strong, #1F2430);
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title-unlock-toast__badge {
+  position: relative;
+  max-width: 142rpx;
+  min-height: 42rpx;
+  padding: 0 16rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.36);
+}
+
+.title-unlock-toast__badge-text {
+  font-size: 22rpx;
+  line-height: 30rpx;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title-unlock-toast--debt {
+  --unlock-soft: rgba(217, 74, 82, 0.14);
+  --unlock-tint: rgba(255, 244, 245, 0.96);
+  --unlock-border: rgba(217, 74, 82, 0.22);
+  --unlock-shadow: rgba(217, 74, 82, 0.18);
+}
+
+.title-unlock-toast--unlucky {
+  --unlock-soft: rgba(86, 101, 126, 0.13);
+  --unlock-tint: rgba(248, 250, 253, 0.96);
+  --unlock-border: rgba(86, 101, 126, 0.18);
+  --unlock-shadow: rgba(86, 101, 126, 0.14);
+}
+
+.title-unlock-toast--sea {
+  --unlock-soft: rgba(18, 168, 118, 0.14);
+  --unlock-tint: rgba(239, 253, 247, 0.96);
+  --unlock-border: rgba(18, 168, 118, 0.22);
+  --unlock-shadow: rgba(18, 168, 118, 0.17);
+}
+
+.title-unlock-toast--lucky {
+  --unlock-soft: rgba(233, 146, 27, 0.16);
+  --unlock-tint: rgba(255, 249, 239, 0.96);
+  --unlock-border: rgba(233, 146, 27, 0.24);
+  --unlock-shadow: rgba(233, 146, 27, 0.18);
+}
+
+.title-unlock-toast--overspeed {
+  --unlock-soft: rgba(47, 111, 228, 0.14);
+  --unlock-tint: rgba(242, 247, 255, 0.96);
+  --unlock-border: rgba(47, 111, 228, 0.22);
+  --unlock-shadow: rgba(47, 111, 228, 0.16);
+}
+
+.title-unlock-toast--dark {
+  --unlock-tint: rgba(26, 29, 39, 0.96);
+}
+
+.title-unlock-toast--dark .title-unlock-toast__inner {
+  box-shadow: 0 16rpx 38rpx rgba(0, 0, 0, 0.34);
+}
+
+.title-unlock-toast--dark .title-unlock-toast__eyebrow {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.title-unlock-toast--dark .title-unlock-toast__title {
+  color: #F3F4F8;
+}
+
+.title-unlock-toast--dark .title-unlock-toast__badge {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+}

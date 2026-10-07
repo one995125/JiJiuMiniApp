@@ -1,0 +1,18 @@
+export const SEO_COPY = {
+  appName: '聚会记账助手',
+  homeNavTitle: '记酒 - 聚会惩罚公平记账',
+  landingNavTitle: '聚会惩罚公平记账工具',
+  homeHeaderTitle: '聚会记账助手',
+  homeHeaderSubtitle: '谁输多少、完成多少，一眼看清',
+  searchDescription: '记酒是一款聚会惩罚公平记账小程序，划拳或小游戏输了先增加数量，完成后再扣减；饮料、积分或其他友好方式同样能记。',
+  searchKeywords: '聚会记账,划拳计数,惩罚计数,待完成排行,朋友游戏计数,记酒',
+  shareTitle: '今晚谁还欠多少？用记酒公平记下来',
+  timelineTitle: '谁输多少、完成多少，一眼看清',
+  landingShareTitle: '今晚谁还欠多少？用记酒公平记下来',
+  landingTimelineTitle: '聚会惩罚公平记账，饮料、积分同样能记',
+  activePartyShareTitle: (count: number) => `${count}人聚会进行中，待完成数一眼看清`,
+  sharePath: '/pages/index/index?from=share',
+  landingSharePath: '/pages/landing/landing?from=share',
+  timelineQuery: 'from=timeline&scene=wechat_search',
+  shareImage: '/images/share-cover-privacy.jpg',
+}

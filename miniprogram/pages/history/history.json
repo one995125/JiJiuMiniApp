@@ -1,0 +1,12 @@
+{
+  "component": true,
+  "navigationBarTitleText": "酒局记录",
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "t-tag": "tdesign-miniprogram/tag/tag",
+    "app-avatar": "../../components/app-avatar/app-avatar",
+    "medal-guide": "../../components/medal-guide/medal-guide"
+  }
+}

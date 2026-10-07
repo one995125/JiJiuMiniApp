@@ -1,0 +1,257 @@
+.medal-guide-sheet {
+  background: var(--app-surface, #FFFFFF);
+  border-radius: var(--app-radius-xl, 28rpx) var(--app-radius-xl, 28rpx) 0 0;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.medal-guide-handle {
+  width: 64rpx;
+  height: 6rpx;
+  background: #D9D9D9;
+  border-radius: 3rpx;
+  margin: 16rpx auto 8rpx;
+  flex-shrink: 0;
+}
+
+.medal-guide-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 32rpx 12rpx;
+  flex-shrink: 0;
+}
+
+.medal-guide-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.medal-guide-title {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: var(--app-text-strong, #121723);
+}
+
+.medal-guide-close {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.medal-guide-intro {
+  padding: 4rpx 32rpx 16rpx;
+  flex-shrink: 0;
+}
+
+.medal-guide-intro-text {
+  font-size: 26rpx;
+  color: var(--app-text-subtle, #697080);
+  line-height: 1.55;
+}
+
+.medal-guide-body {
+  flex: 1;
+  min-height: 0;
+  padding: 0 32rpx 32rpx;
+}
+
+.medal-guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.medal-card {
+  background: var(--app-surface-soft, #FBFAF7);
+  border-radius: var(--app-radius-lg, 22rpx);
+  padding: 26rpx 34rpx 24rpx 34rpx;
+  border: 1rpx solid rgba(31, 36, 48, 0.055);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 左侧彩色装饰条：一眼定位称号 */
+.medal-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 16rpx;
+  bottom: 16rpx;
+  width: 6rpx;
+  border-radius: 0 4rpx 4rpx 0;
+  background: #BBBBBB;
+}
+
+.medal-card--debt::before { background: #E34D59; }
+.medal-card--unlucky::before { background: #56657E; }
+.medal-card--sea::before { background: #12A876; }
+.medal-card--lucky::before { background: #E9921B; }
+.medal-card--overspeed::before { background: #2F6FE4; }
+.medal-card--npc::before { background: #BBBBBB; }
+
+.medal-card-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14rpx;
+}
+
+.medal-card-tag {
+  font-size: 26rpx;
+  padding: 6rpx 18rpx;
+  font-weight: 600;
+}
+
+.medal-card-condition-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+  flex-wrap: wrap;
+}
+
+.medal-card-condition-label {
+  font-size: 22rpx;
+  color: var(--app-text-subtle, #697080);
+  background: rgba(31, 36, 48, 0.05);
+  padding: 3rpx 12rpx;
+  border-radius: 6rpx;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.medal-card-condition {
+  font-size: 26rpx;
+  color: var(--app-text, #1F2430);
+  font-weight: 700;
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+}
+
+.medal-card-desc {
+  font-size: 26rpx;
+  color: var(--app-text-subtle, #697080);
+  line-height: 1.7;
+  display: block;
+}
+
+.medal-guide-footer {
+  margin-top: 12rpx;
+  padding: 20rpx 8rpx 8rpx;
+}
+
+.medal-guide-footer-text {
+  font-size: 24rpx;
+  color: var(--app-text-muted, #A6ABB6);
+  display: block;
+  text-align: center;
+}
+
+/* ===== 称号配色（与 record.less 保持一致） ===== */
+
+.medal {
+  font-weight: 500;
+}
+
+.medal--unlucky {
+  color: #56657E;
+  background: rgba(86, 101, 126, 0.13);
+}
+
+.medal--sea {
+  color: #087A58;
+  background: rgba(18, 168, 118, 0.12);
+}
+
+.medal--debt {
+  color: #B82E38;
+  background: rgba(217, 74, 82, 0.12);
+}
+
+.medal--lucky {
+  color: #B96508;
+  background: rgba(233, 146, 27, 0.16);
+}
+
+.medal--overspeed {
+  color: #265EBC;
+  background: rgba(47, 111, 228, 0.1);
+}
+
+.medal--npc {
+  color: #777;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ===== Dark Mode ===== */
+
+.medal-guide-sheet.dark {
+  background: #181A22;
+
+  .medal-guide-title {
+    color: #ECECEC;
+  }
+
+  .medal-guide-intro-text {
+    color: #B0B5C2;
+  }
+
+  .medal-card {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .medal-card-condition-label {
+    color: #B0B5C2;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .medal-card-condition {
+    color: #ECECEC;
+  }
+
+  .medal-card-desc {
+    color: #B0B5C2;
+  }
+
+  .medal-guide-footer-text {
+    color: #777C8A;
+  }
+
+  .medal--unlucky {
+    color: #9aaccc;
+    background: rgba(154, 172, 204, 0.14);
+  }
+
+  .medal--sea {
+    color: #5edfb8;
+    background: rgba(0, 168, 112, 0.18);
+  }
+
+  .medal--debt {
+    color: #ff9aa6;
+    background: rgba(227, 77, 89, 0.2);
+  }
+
+  .medal--lucky {
+    color: #ffd88a;
+    background: rgba(245, 166, 35, 0.22);
+  }
+
+  .medal--overspeed {
+    color: #8eb8ff;
+    background: rgba(0, 82, 217, 0.24);
+  }
+
+  .medal--npc {
+    color: #999;
+    background: rgba(255, 255, 255, 0.08);
+  }
+}

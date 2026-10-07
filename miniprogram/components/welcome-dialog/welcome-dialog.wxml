@@ -1,0 +1,78 @@
+<view class="welcome-overlay {{darkMode ? 'dark' : ''}}" wx:if="{{visible}}" catchtouchmove="noop">
+  <view class="welcome-box" catchtap="noop">
+
+    <!-- Close -->
+    <view class="welcome-close" catchtap="onSkip">
+      <t-icon name="close" size="40rpx" color="{{darkMode ? '#999' : '#A6ABB6'}}" />
+    </view>
+
+    <!-- Hero -->
+    <view class="welcome-hero">
+      <view class="welcome-hero-icon">
+        <t-icon name="service" size="64rpx" color="#FFFFFF" />
+      </view>
+      <text class="welcome-title">聚会惩罚公平记账</text>
+      <text class="welcome-subtitle">谁输多少、完成多少，一眼看清</text>
+      <text class="welcome-subtitle-2">饮料、积分或其他友好方式同样能记</text>
+    </view>
+
+    <!-- Features -->
+    <view class="welcome-features">
+      <view class="feature-item">
+        <view class="feature-icon feature-icon--primary">
+          <t-icon name="add-rectangle" size="34rpx" color="#E9921B" />
+        </view>
+        <view class="feature-body">
+          <text class="feature-title">输了就加</text>
+          <text class="feature-desc">产生一次惩罚，就给对应的人增加待完成数</text>
+        </view>
+      </view>
+      <view class="feature-item">
+        <view class="feature-icon feature-icon--success">
+          <t-icon name="chart-bar" size="34rpx" color="#12A876" />
+        </view>
+        <view class="feature-body">
+          <text class="feature-title">完成就减</text>
+          <text class="feature-desc">完成饮料、积分或约定任务后，立即扣减相应数量</text>
+        </view>
+      </view>
+      <view class="feature-item">
+        <view class="feature-icon feature-icon--danger">
+          <t-icon name="user-circle" size="34rpx" color="#D94A52" />
+        </view>
+        <view class="feature-body">
+          <text class="feature-title">实时看剩余</text>
+          <text class="feature-desc">每个人的待完成数同步更新，减少口头争议</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Medal Rule Link -->
+    <view class="welcome-medal-link" catchtap="onShowMedalGuide">
+      <text class="welcome-medal-link-text">了解 6 种聚会称号</text>
+      <t-icon name="chevron-right" size="28rpx" color="#E9921B" />
+    </view>
+
+    <!-- Actions -->
+    <view class="welcome-actions">
+      <t-button theme="primary" size="large" block shape="round" bind:tap="onConfirm">
+        开始体验
+      </t-button>
+      <view class="welcome-skip" catchtap="onSkip">
+        <text class="welcome-skip-text">跳过指引</text>
+      </view>
+    </view>
+
+    <view class="welcome-tip">
+      <text class="welcome-tip-text">仅限成年人健康娱乐 · 拒绝劝酒 · 饮酒勿驾车</text>
+    </view>
+  </view>
+</view>
+
+<!-- 称号规则说明 popup：按需挂载，避免首屏渲染隐藏 popup 内部列表。 -->
+<block wx:if="{{medalGuideVisible}}">
+  <medal-guide
+    visible="{{medalGuideVisible}}"
+    dark-mode="{{darkMode}}"
+    bind:close="onCloseMedalGuide" />
+</block>

@@ -1,0 +1,21 @@
+<!--
+  统一头像展示组件：
+  - photoPath 有值时展示照片；
+  - 无照片时展示姓名首字；
+  - size 使用 rpx，便于在首页、记酒页、总览弹层保持同一视觉体系。
+-->
+<view
+  class="app-avatar {{darkMode ? 'app-avatar--dark' : ''}} {{interactive ? 'app-avatar--interactive' : ''}}"
+  style="width: {{size}}rpx; height: {{size}}rpx; --avatar-bg: {{color}};"
+>
+  <image
+    wx:if="{{photoPath}}"
+    class="app-avatar__image"
+    src="{{photoPath}}"
+    mode="aspectFill"
+    binderror="onImageError"
+  />
+  <view wx:else class="app-avatar__fallback">
+    <text class="app-avatar__text" style="font-size: {{fontSize}}rpx;">{{initial}}</text>
+  </view>
+</view>

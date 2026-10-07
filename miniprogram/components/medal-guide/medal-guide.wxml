@@ -1,0 +1,94 @@
+<t-popup visible="{{visible}}" placement="bottom" bind:visible-change="onVisibleChange">
+  <view class="medal-guide-sheet {{darkMode ? 'dark' : ''}}">
+    <view class="medal-guide-handle"></view>
+
+    <view class="medal-guide-head">
+      <view class="medal-guide-title-row">
+        <t-icon name="info-circle" size="38rpx" color="#E9921B" />
+        <text class="medal-guide-title">称号规则</text>
+      </view>
+      <view class="medal-guide-close" bindtap="onClose">
+        <t-icon name="close" size="40rpx" color="#999" />
+      </view>
+    </view>
+
+    <view class="medal-guide-intro">
+      <text class="medal-guide-intro-text">系统会根据每个人的喝酒情况自动颁发称号，让酒局更有戏。</text>
+    </view>
+
+    <scroll-view class="medal-guide-body" scroll-y>
+      <view class="medal-guide-list">
+
+        <view class="medal-card medal-card--debt">
+          <view class="medal-card-head">
+            <t-tag t-class="medal medal--debt medal-card-tag" size="small" shape="round" variant="light" theme="danger">养鱼达人</t-tag>
+          </view>
+          <view class="medal-card-condition-row">
+            <text class="medal-card-condition-label">获得条件</text>
+            <text class="medal-card-condition">欠酒数最多的人</text>
+          </view>
+          <text class="medal-card-desc">可以在总览页面上传头像，你懂的。</text>
+        </view>
+
+        <view class="medal-card medal-card--unlucky">
+          <view class="medal-card-head">
+            <t-tag t-class="medal medal--unlucky medal-card-tag" size="small" shape="round" variant="light" theme="default">倒霉蛋</t-tag>
+          </view>
+          <view class="medal-card-condition-row">
+            <text class="medal-card-condition-label">获得条件</text>
+            <text class="medal-card-condition">输最多的人</text>
+          </view>
+          <text class="medal-card-desc">运气爆棚，可以去买彩票了。</text>
+        </view>
+
+        <view class="medal-card medal-card--sea">
+          <view class="medal-card-head">
+            <t-tag t-class="medal medal--sea medal-card-tag" size="small" shape="round" variant="light" theme="success">海量</t-tag>
+          </view>
+          <view class="medal-card-condition-row">
+            <text class="medal-card-condition-label">获得条件</text>
+            <text class="medal-card-condition">结清单位数最多，且 ≥ 5</text>
+          </view>
+          <text class="medal-card-desc">比起喝酒，喝醉更难。</text>
+        </view>
+
+        <view class="medal-card medal-card--lucky">
+          <view class="medal-card-head">
+            <t-tag t-class="medal medal--lucky medal-card-tag" size="small" shape="round" variant="light" theme="warning">幸运儿</t-tag>
+          </view>
+          <view class="medal-card-condition-row">
+            <text class="medal-card-condition-label">获得条件</text>
+            <text class="medal-card-condition">输的最少的人</text>
+          </view>
+          <text class="medal-card-desc">某种意义上的"白来一遭，酒钱白 A"。</text>
+        </view>
+
+        <view class="medal-card medal-card--overspeed">
+          <view class="medal-card-head">
+            <t-tag t-class="medal medal--overspeed medal-card-tag" size="small" shape="round" variant="light" theme="primary">不求人</t-tag>
+          </view>
+          <view class="medal-card-condition-row">
+            <text class="medal-card-condition-label">获得条件</text>
+            <text class="medal-card-condition">当前口数显示为负数</text>
+          </view>
+          <text class="medal-card-desc">自饮自酌的狠人，属于"提前预支"型选手。</text>
+        </view>
+
+        <view class="medal-card medal-card--npc">
+          <view class="medal-card-head">
+            <t-tag t-class="medal medal--npc medal-card-tag" size="small" shape="round" variant="light" theme="default">NPC</t-tag>
+          </view>
+          <view class="medal-card-condition-row">
+            <text class="medal-card-condition-label">获得条件</text>
+            <text class="medal-card-condition">成功避开所有称号</text>
+          </view>
+          <text class="medal-card-desc">平平无奇"路人甲"。</text>
+        </view>
+
+        <view class="medal-guide-footer">
+          <text class="medal-guide-footer-text">称号会随酒局进展实时更新，多人并列时同时获得</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</t-popup>

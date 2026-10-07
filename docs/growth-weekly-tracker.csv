@@ -1,0 +1,13 @@
+week,content_id,scene_id,publish_date,content_type,title,plays,completion_rate,entry_views,activated_users,activated_per_1000_plays,share_users,share_rate,decision,notes
+1,w01_pain_01,w01p1,,pain,每次划拳到最后都有人说自己没输那么多,,,,,,,,baseline,
+1,w01_demo_01,w01d1,,demo,不用纸笔3秒记清每个人的惩罚数,,,,,,,,baseline,
+1,w01_safe_01,w01s1,,safe,不喝酒也能玩饮料积分一样可以记,,,,,,,,baseline,
+2,w02_pain_01,w02p1,,pain,四个人一起玩最容易在哪一步算乱,,,,,,,,baseline,
+2,w02_demo_01,w02d1,,demo,输了怎么加完成后怎么减一次看懂,,,,,,,,baseline,
+2,w02_safe_01,w02s1,,safe,朋友说刚才已经完成了怎么公平处理,,,,,,,,baseline,
+3,w03_pain_01,w03p1,,pain,聚会最尴尬的不是输是根本记不清,,,,,,,,evaluate,
+3,w03_demo_01,w03d1,,demo,手机放桌上所有人的剩余数量都清楚,,,,,,,,evaluate,
+3,w03_safe_01,w03s1,,safe,拒绝劝酒版聚会玩法惩罚可以自己选,,,,,,,,evaluate,
+4,w04_pain_01,w04p1,,qa,网友最常问中途加入的人怎么记,,,,,,,,evaluate,
+4,w04_demo_01,w04d1,,demo,一场聚会从开始到结束的完整记录演示,,,,,,,,evaluate,
+4,w04_safe_01,w04s1,,rules,真正公平的规则不逼完成不赖账随时可替代,,,,,,,,evaluate,

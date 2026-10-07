@@ -1,0 +1,227 @@
+<view class="history-page {{darkMode ? 'dark' : ''}}">
+  <view class="navbar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-back" bindtap="onBack">
+      <t-icon name="chevron-left" size="44rpx" color="{{darkMode ? '#D8D8D8' : '#333'}}" />
+    </view>
+    <view class="nav-title-wrap">
+      <text class="nav-title">酒局记录</text>
+      <text class="nav-subtitle">点击查看总览 · 继续任意酒局</text>
+    </view>
+    <view class="nav-refresh" bindtap="onRefresh">
+      <t-icon name="refresh" size="38rpx" color="{{darkMode ? '#F4B75A' : '#E9921B'}}" />
+    </view>
+  </view>
+
+  <scroll-view
+    class="history-scroll"
+    scroll-y
+    refresher-enabled="{{true}}"
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onPullRefresh"
+    bindscrolltolower="onReachBottom"
+    lower-threshold="{{80}}"
+  >
+    <view class="history-content">
+      <view class="summary-panel">
+        <view class="summary-mark">
+          <t-icon name="chart-bar" size="34rpx" color="{{darkMode ? '#F4B75A' : '#E9921B'}}" />
+        </view>
+        <view class="summary-copy">
+          <text class="summary-title">记录总览</text>
+          <text class="summary-desc">每一场酒局都可以继续记录；点击卡片查看总览，长按可删除记录。</text>
+        </view>
+        <view class="summary-count">
+          <text class="summary-count-num">{{records.length}}</text>
+          <text class="summary-count-label">酒局总数</text>
+        </view>
+      </view>
+
+      <view wx:if="{{loading && records.length === 0}}" class="state-card">
+        <t-icon name="loading" size="46rpx" color="#E9921B" />
+        <text class="state-title">正在加载酒局记录</text>
+        <text class="state-desc">会同时读取未结束酒局和已结束酒局</text>
+      </view>
+
+      <view wx:elif="{{errorText && records.length === 0}}" class="state-card state-card--error">
+        <t-icon name="error-circle" size="48rpx" color="#D94A52" />
+        <text class="state-title">加载失败</text>
+        <text class="state-desc">{{errorText}}</text>
+        <t-button theme="primary" size="small" bind:tap="onRefresh">重试</t-button>
+      </view>
+
+      <view wx:elif="{{records.length === 0}}" class="state-card">
+        <t-icon name="time" size="52rpx" color="#C7A06A" />
+        <text class="state-title">还没有酒局记录</text>
+        <text class="state-desc">开始一场聚会并记录后，这里会显示未结束酒局；结束后会保留为历史总览。</text>
+      </view>
+
+      <view wx:else class="history-list">
+        <view
+          class="history-card history-card--{{item.status}}"
+          wx:for="{{records}}"
+          wx:key="partyId"
+          bindtap="onOpenDetail"
+          catchlongpress="onDeleteRecord"
+          data-party-id="{{item.partyId}}"
+        >
+          <view class="history-card-head">
+            <view class="history-time">
+              <t-icon name="time" size="30rpx" color="#E9921B" />
+              <text>{{item.timeHint}} · {{item.primaryTimeLabel}}</text>
+            </view>
+            <t-icon name="chevron-right" size="30rpx" color="{{darkMode ? '#646B78' : '#B8AFA3'}}" />
+          </view>
+
+          <view class="history-main-row">
+            <view class="history-avatar-stack">
+              <view
+                class="history-avatar-item"
+                wx:for="{{item.avatarPlayers}}"
+                wx:for-item="avatar"
+                wx:key="key"
+              >
+                <app-avatar
+                  name="{{avatar.name}}"
+                  color="{{avatar.color}}"
+                  photo-path="{{avatar.photoPath}}"
+                  size="{{72}}"
+                  dark-mode="{{darkMode}}"
+                />
+              </view>
+              <view wx:if="{{item.avatarOverflow}}" class="history-avatar-more">
+                <text>…</text>
+              </view>
+            </view>
+            <view class="history-resume-btn history-resume-btn--{{item.status}}" catchtap="onResumeParty" catchlongpress="noop" data-party-id="{{item.partyId}}">
+              <t-icon name="play-circle" size="26rpx" color="#FFFFFF" />
+              <text>继续</text>
+            </view>
+          </view>
+        </view>
+
+        <view wx:if="{{loadingMore}}" class="load-more load-more--loading">
+          <t-icon name="loading" size="34rpx" color="#E9921B" />
+          <text>加载更多中</text>
+        </view>
+        <view wx:elif="{{hasMore}}" class="load-more" bindtap="onLoadMore">
+          <text>加载更多</text>
+        </view>
+        <view wx:else class="load-more load-more--end">
+          <text>没有更多已结束酒局了</text>
+        </view>
+      </view>
+
+      <view class="bottom-safe-space"></view>
+    </view>
+  </scroll-view>
+
+  <!-- 酒局总览详情：点击卡片查看总览；点击“继续”才进入记录页继续。 -->
+  <block wx:if="{{detailVisible && selectedRecord}}">
+    <t-popup visible="{{detailVisible}}" placement="bottom" bind:visible-change="onDetailVisibleChange">
+<view class="history-detail {{darkMode ? 'dark' : ''}}">
+        <view class="detail-handle"></view>
+        <view class="detail-head">
+          <view class="detail-title-row">
+            <t-icon name="chart-bar" size="40rpx" color="#E9921B" />
+            <view class="detail-title-copy">
+              <text wx:if="{{selectedRecord.status === 'active'}}" class="detail-title">酒局总览</text>
+              <text wx:else class="detail-title">已结束战绩总览</text>
+            </view>
+          </view>
+          <view class="detail-close" bindtap="onCloseDetail">
+            <t-icon name="close" size="40rpx" color="#999" />
+          </view>
+        </view>
+
+        <scroll-view class="detail-body" scroll-y>
+          <view class="detail-inner">
+            <view class="detail-summary-card">
+              <view class="detail-summary-item">
+                <text class="detail-summary-value">{{selectedRecord.playerCount}}</text>
+                <text class="detail-summary-label">人数</text>
+              </view>
+              <view class="detail-summary-item">
+                <text class="detail-summary-value">{{selectedRecord.recordCount}}</text>
+                <text class="detail-summary-label">记录数</text>
+              </view>
+            </view>
+
+            <view wx:if="{{selectedOverview.debtChampionHero}}" class="debt-champion-hero">
+              <text class="debt-champion-label">养鱼达人</text>
+              <view class="debt-champion-avatar-wrap">
+                <app-avatar
+                  name="{{selectedOverview.debtChampionHero.name}}"
+                  color="{{selectedOverview.debtChampionHero.color}}"
+                  size="{{188}}"
+                  dark-mode="{{darkMode}}"
+                />
+              </view>
+              <text class="debt-champion-name">{{selectedOverview.debtChampionHero.name}}</text>
+              <text class="debt-champion-caption">欠{{selectedOverview.debtChampionHero.debtUnits}}{{selectedRecord.unit}}</text>
+            </view>
+
+            <view class="rank-section-head">
+              <text class="rank-section-title">战绩排行</text>
+              <view class="ranking-medal-link" bindtap="onShowMedalGuide">
+                <t-icon name="help-circle" size="38rpx" color="#E9921B" />
+                <text class="ranking-medal-link-text">称号规则</text>
+              </view>
+            </view>
+
+            <view class="rank-row" wx:for="{{selectedOverview.rankingTierGroups}}" wx:key="key">
+              <view class="rank-row-left">
+            <app-avatar name="{{item.players[0].name}}" color="{{item.players[0].color}}" size="{{68}}" dark-mode="{{darkMode}}" />
+                <view class="rank-row-info">
+                  <text class="rank-name">{{item.players[0].name}}</text>
+                  <view class="rank-row-medals">
+                    <t-tag wx:if="{{item.players[0].badgeUnlucky}}" t-class="medal medal--unlucky medal--rank" size="small" shape="round" variant="light" theme="default">倒霉蛋</t-tag>
+                    <t-tag wx:if="{{item.players[0].badgeSea}}" t-class="medal medal--sea medal--rank" size="small" shape="round" variant="light" theme="success">海量</t-tag>
+                    <t-tag wx:if="{{item.players[0].badgeDebt}}" t-class="medal medal--debt medal--rank" size="small" shape="round" variant="light" theme="danger">养鱼达人</t-tag>
+                    <t-tag wx:if="{{item.players[0].badgeLucky}}" t-class="medal medal--lucky medal--rank" size="small" shape="round" variant="light" theme="warning">幸运儿</t-tag>
+                    <t-tag wx:if="{{item.players[0].badgeOverspeed}}" t-class="medal medal--overspeed medal--rank" size="small" shape="round" variant="light" theme="primary">不求人</t-tag>
+                    <t-tag wx:if="{{item.players[0].badgeNpc}}" t-class="medal medal--npc medal--rank" size="small" shape="round" variant="light" theme="default">NPC</t-tag>
+                  </view>
+                </view>
+              </view>
+              <view class="rank-row-right">
+                <text class="rank-cups--shu">{{item.shuPart}}</text>
+                <text class="rank-cups--he">{{item.hePart}}</text>
+                <text class="rank-cups--qian">{{item.qianPart}}</text>
+              </view>
+            </view>
+
+            <view class="detail-record-feed">
+              <text class="detail-record-title">记录明细</text>
+              <view
+                class="detail-record-line"
+                wx:for="{{selectedOverview.rankingRecordLines}}"
+                wx:key="recordLineKey"
+              >
+                <text class="detail-record-name">{{item.playerName}}</text>
+                <view class="detail-record-segments">
+                  <text
+                    wx:for="{{item.segments}}"
+                    wx:for-item="seg"
+                    wx:key="key"
+                    class="detail-record-token detail-record-token--{{seg.kind}}"
+                  >{{seg.text}}</text>
+                  <text wx:if="{{item.segments.length === 0}}" class="detail-record-empty">暂无记录</text>
+                </view>
+              </view>
+            </view>
+
+            <view class="detail-bottom-space"></view>
+          </view>
+        </scroll-view>
+      </view>
+    </t-popup>
+  </block>
+
+  <block wx:if="{{showMedalGuide && selectedRecord}}">
+    <medal-guide
+      visible="{{showMedalGuide}}"
+      dark-mode="{{darkMode}}"
+      settings="{{selectedRecord.party.settings}}"
+      bind:close="onHideMedalGuide" />
+  </block>
+</view>

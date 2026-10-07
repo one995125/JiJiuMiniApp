@@ -1,0 +1,96 @@
+<view class="landing-root {{darkMode ? 'dark' : ''}}">
+  <scroll-view class="landing-scroll" scroll-y>
+    <view class="landing-container" style="padding-top: {{statusBarHeight + 18}}px;">
+      <view class="top-actions">
+        <view class="text-button" bindtap="onHomeTap">
+          <t-icon name="home" size="30rpx" color="{{darkMode ? '#B8C0CC' : '#697080'}}" />
+          <text>首页</text>
+        </view>
+        <view class="dark-toggle" bindtap="onToggleDarkMode">
+          <t-icon name="{{darkMode ? 'sunny' : 'moon'}}" size="32rpx" color="{{darkMode ? '#F4B75A' : '#697080'}}" />
+        </view>
+      </view>
+
+      <view class="hero">
+        <view class="brand-mark">
+          <text>酒</text>
+        </view>
+        <text class="eyebrow">聚会记账助手</text>
+        <text class="hero-title">聚会惩罚公平记账工具</text>
+        <text class="hero-desc">划拳或小游戏输了先增加惩罚数，完成约定后再扣减。饮料、积分或其他友好方式同样能记，谁还剩多少一眼看清。</text>
+        <view class="hero-actions">
+          <view class="primary-button" bindtap="onStartTap">
+            <t-icon name="play-circle" size="36rpx" color="#FFFFFF" />
+            <text>开始记账</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="search-card">
+        <text class="card-title">适合这些场景</text>
+        <view class="keyword-row">
+          <text>聚会小游戏</text>
+          <text>惩罚计数</text>
+          <text>聚会记账</text>
+          <text>划拳计数</text>
+          <text>待完成排行</text>
+          <text>朋友游戏计数</text>
+        </view>
+      </view>
+
+      <view class="feature-grid">
+        <view class="feature-item">
+          <view class="feature-icon">
+            <t-icon name="usergroup" size="34rpx" color="#B96508" />
+          </view>
+          <text class="feature-title">快速开局</text>
+          <text class="feature-desc">输入参与者名字，选择杯、瓶、罐和每单位口数，就能开始记录聚会。</text>
+        </view>
+
+        <view class="feature-item">
+          <view class="feature-icon feature-icon--green">
+            <t-icon name="swap" size="34rpx" color="#0B7F5E" />
+          </view>
+          <text class="feature-title">实时计量</text>
+          <text class="feature-desc">支持 +1口、+5口、+10口、+1单位和撤销，现场快速记录待完成数。</text>
+        </view>
+
+        <view class="feature-item">
+          <view class="feature-icon feature-icon--red">
+            <t-icon name="chart-bar" size="34rpx" color="#B93642" />
+          </view>
+          <text class="feature-title">战绩排行</text>
+          <text class="feature-desc">自动计算增加、完成和剩余数量，生成总览排行，方便朋友一起核对。</text>
+        </view>
+
+        <view class="feature-item">
+          <view class="feature-icon feature-icon--blue">
+            <t-icon name="refresh" size="34rpx" color="#2F6FE4" />
+          </view>
+          <text class="feature-title">继续记录</text>
+          <text class="feature-desc">未结束聚会会自动保留，重新打开也能接着记，不打断现场节奏。</text>
+        </view>
+      </view>
+
+      <view class="section">
+        <text class="section-title">常见问题</text>
+        <view class="qa-item">
+          <text class="qa-question">可以记录饮料、积分或其他惩罚吗？</text>
+          <text class="qa-answer">可以。每个人都有独立计数，大家先约定单位和替代方式，现场点按即可记录。</text>
+        </view>
+        <view class="qa-item">
+          <text class="qa-question">能看出谁的待完成数最多吗？</text>
+          <text class="qa-answer">可以。总览会展示增加量、已完成量和剩余数量，用于朋友间公平核对。</text>
+        </view>
+        <view class="qa-item">
+          <text class="qa-question">一定要饮酒才能使用吗？</text>
+          <text class="qa-answer">不需要。推荐使用饮料、积分、零食或约定任务替代，重点是公平记录而不是劝人饮酒。</text>
+        </view>
+      </view>
+
+      <view class="notice">
+        <text>仅限成年人健康娱乐，可用饮料或积分替代，拒绝劝酒，饮酒勿驾车。</text>
+      </view>
+    </view>
+  </scroll-view>
+</view>

@@ -1,0 +1,82 @@
+<view class="health-page {{darkMode ? 'dark' : ''}}">
+  <view class="navbar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-back" bindtap="onBack">
+      <t-icon name="chevron-left" size="44rpx" color="{{darkMode ? '#D8D8D8' : '#333'}}" />
+    </view>
+    <view class="nav-title-wrap">
+      <text class="nav-title">云开发自检</text>
+      <text class="nav-subtitle">共享 CloudBase 连通性</text>
+    </view>
+    <view class="nav-refresh" bindtap="onRefresh">
+      <t-icon name="refresh" size="38rpx" color="{{darkMode ? '#F4B75A' : '#E9921B'}}" />
+    </view>
+  </view>
+
+  <scroll-view class="health-scroll" scroll-y>
+    <view class="health-content">
+      <view class="summary-panel summary-panel--{{report.status}}">
+        <view class="summary-icon">
+          <t-icon name="{{summaryIcon}}" size="56rpx" color="{{summaryColor}}" />
+        </view>
+        <view class="summary-copy">
+          <view class="summary-title-row">
+            <text class="summary-title">{{report.summary}}</text>
+            <t-tag theme="{{summaryTagTheme}}" variant="light" size="small">{{summaryStatusText}}</t-tag>
+          </view>
+          <text class="summary-desc">{{report.envLabel}}</text>
+          <text class="summary-time">检测时间：{{report.checkedAt || '未检测'}}</text>
+        </view>
+      </view>
+
+      <view class="action-row">
+        <t-button theme="primary" size="small" icon="refresh" loading="{{checking}}" bind:tap="onRefresh">
+          重新自检
+        </t-button>
+        <t-button theme="default" variant="outline" size="small" icon="copy" bind:tap="onCopyReport">
+          复制报告
+        </t-button>
+      </view>
+
+      <view wx:if="{{checking && steps.length === 0}}" class="state-card">
+        <t-icon name="loading" size="48rpx" color="#E9921B" />
+        <text class="state-title">正在检查云开发链路</text>
+        <text class="state-desc">会依次检查 SDK、云登录、活跃酒局读取和临时写入清理。</text>
+      </view>
+
+      <view wx:else class="step-list">
+        <view
+          class="step-card step-card--{{item.status}}"
+          wx:for="{{steps}}"
+          wx:key="key"
+        >
+          <view class="step-head">
+            <view class="step-head-left">
+              <view class="step-icon">
+                <t-icon name="{{item.icon}}" size="42rpx" color="{{item.color}}" />
+              </view>
+              <text class="step-title">{{item.title}}</text>
+            </view>
+            <t-tag theme="{{item.tagTheme}}" variant="light" size="small">{{item.statusText}}</t-tag>
+          </view>
+          <text class="step-message">{{item.message}}</text>
+          <view class="step-advice">
+            <text class="step-label">处理建议</text>
+            <text class="step-advice-text">{{item.advice}}</text>
+          </view>
+          <view wx:if="{{item.detail}}" class="step-detail">
+            <text class="step-label">调试详情</text>
+            <text class="step-detail-text">{{item.detail}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="notice-card">
+        <text class="notice-title">说明</text>
+        <text class="notice-text">入口隐藏在首页标题区域长按，普通用户不会看到。自检写入的是 cloud-self-check 临时酒局，云函数会按文档 ID 清理，不会放弃或覆盖真实酒局。</text>
+        <text class="notice-text">如果出现未授权，请在资源方 CloudBase 控制台确认环境共享授权；如果出现函数不存在或 UNKNOWN_ACTION，请重新部署对应云函数。</text>
+      </view>
+
+      <view class="bottom-safe-space"></view>
+    </view>
+  </scroll-view>
+</view>

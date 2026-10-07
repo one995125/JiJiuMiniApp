@@ -1,0 +1,7 @@
+{
+  "component": true,
+  "navigationBarTitleText": "聚会惩罚公平记账工具",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  }
+}

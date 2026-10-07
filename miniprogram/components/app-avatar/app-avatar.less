@@ -1,0 +1,44 @@
+.app-avatar {
+  display: block;
+  flex-shrink: 0;
+  padding: 4rpx;
+  border-radius: 50%;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(233, 146, 27, 0.22));
+  box-shadow: var(--app-shadow-soft, 0 2rpx 10rpx rgba(31, 36, 48, 0.045));
+}
+
+.app-avatar--interactive:active {
+  transform: scale(0.96);
+  opacity: 0.86;
+}
+
+.app-avatar__image,
+.app-avatar__fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.app-avatar__fallback {
+  background: var(--avatar-bg, #E9921B);
+}
+
+.app-avatar__image {
+  background: #fff;
+}
+
+.app-avatar__text {
+  color: #fff;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.app-avatar--dark {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(244, 183, 90, 0.18));
+  box-shadow: 0 6rpx 18rpx rgba(0, 0, 0, 0.22);
+}

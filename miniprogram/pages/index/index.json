@@ -1,0 +1,11 @@
+{
+  "component": true,
+  "navigationBarTitleText": "记酒 - 聚会惩罚公平记账",
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-tag": "tdesign-miniprogram/tag/tag",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "app-avatar": "../../components/app-avatar/app-avatar",
+    "welcome-dialog": "../../components/welcome-dialog/welcome-dialog"
+  }
+}

@@ -1,0 +1,21 @@
+node_modules/
+miniprogram/miniprogram_npm/
+cloudfunctions/**/node_modules/
+
+# 微信开发者工具个人配置
+project.private.config.json
+
+# 编辑器、系统与临时文件
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.temp
+NUL
+
+# 测试、构建与临时素材
+coverage/
+dist/
+unused-assets/
