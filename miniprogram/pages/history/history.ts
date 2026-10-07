@@ -16,6 +16,7 @@ import {
 } from '../../utils/storage'
 import { deferStatusBarHeightUpdate } from '../../utils/system'
 import { buildPartyOverview, PartyOverviewData } from '../../utils/party-overview'
+import { getPartyElapsedMs } from '../../utils/party-lifecycle'
 
 const PAGE_SIZE = 10
 const ACTIVE_PAGE_SIZE = 50
@@ -127,7 +128,6 @@ function getRecordVersion(record: CloudPartyRecord): number {
 function buildLocalActiveRecord(party: IPartyData | null): CloudPartyRecord | null {
   if (!party || party.endedAt || !Array.isArray(party.players) || party.players.length === 0) return null
 
-  const startAt = Number(party.startTime || Date.parse(party.createdAt) || 0)
   const now = Date.now()
   return {
     partyId: party.partyId,
@@ -139,7 +139,7 @@ function buildLocalActiveRecord(party: IPartyData | null): CloudPartyRecord | nu
       recordCount: countRecords(party),
       unit: party.settings.unit,
       unitToSip: party.settings.unitToSip,
-      durationMs: startAt ? Math.max(now - startAt, 0) : 0,
+      durationMs: getPartyElapsedMs(party, now),
     },
   }
 }
@@ -184,15 +184,18 @@ function mergeActiveRecordsWithLocal(
 
 function getPartyDuration(record: CloudPartyRecord, displayStatus: HistoryPartyStatus): number {
   const party = record.party
-  const startAt = Number(party.startTime || Date.parse(party.createdAt) || 0)
   if (displayStatus === 'active') {
-    return startAt ? Math.max(Date.now() - startAt, 0) : 0
+    return getPartyElapsedMs(party)
   }
 
+  const endedAt = toTimestamp(record.endedAt) || toTimestamp(record.updatedAt) || toTimestamp(party.endedAt)
+  if (endedAt && (Number(party.pausedDurationMs || 0) > 0 || !!party.pausedAt)) {
+    return getPartyElapsedMs(party, endedAt)
+  }
   const statsDuration = Number(record.stats?.durationMs)
   if (Number.isFinite(statsDuration) && statsDuration >= 0) return statsDuration
 
-  const endedAt = toTimestamp(record.endedAt) || toTimestamp(record.updatedAt) || toTimestamp(party.endedAt)
+  const startAt = Number(party.startTime || Date.parse(party.createdAt) || 0)
   if (!startAt || !endedAt) return 0
   return Math.max(endedAt - startAt, 0)
 }

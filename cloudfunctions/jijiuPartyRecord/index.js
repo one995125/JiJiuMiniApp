@@ -108,7 +108,7 @@ function sanitizeParty(party) {
     throw new Error('INVALID_PLAYERS')
   }
 
-  return {
+  const normalizedParty = {
     partyId: party.partyId,
     createdAt: party.createdAt || new Date().toISOString(),
     updatedAt: party.updatedAt || '',
@@ -118,6 +118,12 @@ function sanitizeParty(party) {
     startTime: Number(party.startTime || Date.now()),
     playerAvatarPhotos: {},
   }
+  if (party.pausedAt) normalizedParty.pausedAt = String(party.pausedAt)
+  const pausedDurationMs = Number(party.pausedDurationMs || 0)
+  if (Number.isFinite(pausedDurationMs) && pausedDurationMs > 0) {
+    normalizedParty.pausedDurationMs = pausedDurationMs
+  }
+  return normalizedParty
 }
 
 function countPartyRecords(party) {
@@ -186,7 +192,11 @@ function shouldKeepExistingRecord(existing, identity, incomingParty, incomingSta
 function buildStats(party, endTime) {
   const recordCount = countPartyRecords(party)
   const startTime = Number(party.startTime || Date.now())
-  const durationMs = Math.max((endTime || Date.now()) - startTime, 0)
+  const referenceTime = endTime || Date.now()
+  const pausedAt = toTimestamp(party.pausedAt)
+  const settledPausedMs = Math.max(Number(party.pausedDurationMs || 0), 0)
+  const currentPausedMs = pausedAt ? Math.max(referenceTime - pausedAt, 0) : 0
+  const durationMs = Math.max(referenceTime - startTime - settledPausedMs - currentPausedMs, 0)
   return {
     playerCount: party.players.length,
     recordCount,

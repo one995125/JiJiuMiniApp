@@ -31,6 +31,10 @@ interface IPartyData {
   createdAt: string
   updatedAt?: string
   endedAt?: string
+  /** 当前暂停开始时间。旧数据缺失时按未暂停处理。 */
+  pausedAt?: string
+  /** 本场已累计的真实暂停时长（毫秒），计时展示与结束统计需扣除。 */
+  pausedDurationMs?: number
   settings: IPartySettings
   players: IPlayer[]
   startTime?: number
@@ -46,7 +50,7 @@ interface IAppOption {
       openid: string
       loginAt: number
     }
-    /** 小程序退后台时正在把当前酒局封存为已结束，记录页延迟云保存应跳过。 */
+    /** 生命周期正在自动结束超时暂停的酒局时，记录页延迟云保存应跳过。 */
     partyEndingByLifecycle?: boolean
   }
 }

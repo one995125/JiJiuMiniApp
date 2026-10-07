@@ -1,6 +1,7 @@
 import { ensureCloudLogin } from './services/auth'
 import { finishPartyInCloud } from './services/party-cloud'
 import { reportLandingEntry } from './services/growth-analytics'
+import { pauseParty, resumePausedParty } from './utils/party-lifecycle'
 import {
   clearPendingEndedParty,
   loadParty,
@@ -17,6 +18,34 @@ function finishEndedPartyInCloud(party: IPartyData): void {
     .catch(err => {
       console.warn('[app lifecycle finish party] pending retry', err)
     })
+}
+
+/**
+ * 恢复前台时结算暂停；只有累计暂停超过阈值才沿用原有结束与失败补偿链路。
+ * 普通短暂停只更新本地 currentParty，不触发云端结束，也不清空当前聚会。
+ */
+function resumeOrAutoEndPausedParty(app: { globalData: IAppOption['globalData'] }): void {
+  const party = loadParty()
+  if (!party || party.endedAt || !party.pausedAt || !Array.isArray(party.players) || party.players.length === 0) {
+    return
+  }
+
+  const result = resumePausedParty(party)
+  if (!result.shouldAutoEnd) {
+    saveParty(result.party)
+    return
+  }
+
+  const endedAt = new Date().toISOString()
+  const endedParty: IPartyData = {
+    ...result.party,
+    updatedAt: endedAt,
+    endedAt,
+  }
+  app.globalData.partyEndingByLifecycle = true
+  savePendingEndedParty(endedParty)
+  saveParty(endedParty)
+  finishEndedPartyInCloud(endedParty)
 }
 
 App<IAppOption>({
@@ -36,6 +65,7 @@ App<IAppOption>({
     if (pendingEndedParty?.partyId) {
       finishEndedPartyInCloud(pendingEndedParty)
     }
+    resumeOrAutoEndPausedParty(this)
   },
 
   onHide() {
@@ -45,24 +75,15 @@ App<IAppOption>({
     }
 
     /**
-     * 产品口径：用户直接退出、切后台或杀掉小程序，即视为本场聚会结束。
-     * 这里先同步写入本地待上传记录并清掉当前聚会，避免下次启动继续累加时长；
-     * 云函数调用若来不及完成，会在下一次 onLaunch 继续补偿。
+     * 切后台只暂停：记录 pausedAt，不写 endedAt、不清空 currentParty、也不发起云端结束。
+     * 再次回到前台时会结算真实暂停时长；只有累计暂停超过阈值才自动封存。
      */
-    const endedAt = new Date().toISOString()
-    const endedParty: IPartyData = {
-      ...party,
-      updatedAt: endedAt,
-      endedAt,
-    }
-    this.globalData.partyEndingByLifecycle = true
-    savePendingEndedParty(endedParty)
-    saveParty(endedParty)
-    finishEndedPartyInCloud(endedParty)
+    saveParty(pauseParty(party))
   },
 
   onShow(options) {
     this.globalData.partyEndingByLifecycle = false
+    resumeOrAutoEndPausedParty(this)
     reportLandingEntry(options)
   },
 
