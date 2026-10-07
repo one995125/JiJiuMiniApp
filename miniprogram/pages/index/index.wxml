@@ -28,6 +28,13 @@
           <t-icon name="chevron-right" size="32rpx" color="#FFFFFF" />
         </view>
       </view>
+      <view class="shared-entry" bindtap="onOpenSharedParty" hover-class="shared-entry--active">
+        <view class="shared-entry-copy">
+          <text class="shared-entry-title">加入同桌账本</text>
+          <text class="shared-entry-desc">已有房主口令？进入只读查看</text>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" color="#B96508" />
+      </view>
     </view>
 
     <view class="header-metrics">

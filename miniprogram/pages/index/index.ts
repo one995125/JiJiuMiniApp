@@ -265,6 +265,11 @@ Component({
       wx.navigateTo({ url: '../history/history' })
     },
 
+    /** 同桌成员入口：成员粘贴房主发来的短口令后进入只读面板。 */
+    onOpenSharedParty() {
+      wx.navigateTo({ url: '../party-view/party-view' })
+    },
+
     /**
      * 隐藏诊断入口。
      *
