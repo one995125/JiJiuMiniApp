@@ -281,7 +281,7 @@ Component({
         return
       }
       if (!this.data.unitSet) {
-        wx.showToast({ title: '请下滑设置计量单位', icon: 'none' })
+        wx.showToast({ title: '请下滑到设置区选择惩罚单位', icon: 'none' })
         return
       }
 

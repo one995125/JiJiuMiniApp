@@ -130,7 +130,7 @@
     <text class="bottom-bar-meta-text">本场聚会：1{{unit}} = {{unitToSip}}口</text>
   </view>
   <t-button theme="primary" size="large" block shape="round" icon="play-circle"
-    disabled="{{players.length === 0}}" bind:tap="onStartParty">
+    disabled="{{players.length === 0 || !unitSet}}" bind:tap="onStartParty">
     开始聚会
   </t-button>
 </view>
