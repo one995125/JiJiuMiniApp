@@ -1,13 +1,8 @@
 import { buildPartyOverview } from '../../utils/party-overview'
-import { restorePartySetupFromParty, saveParty } from '../../utils/storage'
 import {
   SharedPartyPlayer,
   SharedPartySnapshot,
-  PartyMembersResult,
-  claimSharedPlayer,
-  confirmOwnershipTransfer,
   getSharedParty,
-  isPartyCloudError,
   joinSharedParty,
   listPartyMembers,
 } from '../../services/party-cloud'
@@ -24,7 +19,6 @@ type MetricRow = {
   he: string
   qian: string
   titles: string[]
-  isMine: boolean
 }
 
 function formatNumber(value: number): string {
@@ -53,14 +47,13 @@ function getTitles(player: any): string[] {
   return titles
 }
 
-function buildRows(snapshot: SharedPartySnapshot, claimedPlayerId = ''): MetricRow[] {
+function buildRows(snapshot: SharedPartySnapshot): MetricRow[] {
   const overview = buildPartyOverview({
     players: snapshot.players.map(toPlayer),
     settings: snapshot.settings,
     includeRanking: true,
     startTime: snapshot.startTime,
   })
-  const mineId = claimedPlayerId
   return overview.rankingTierGroups.map(group => {
     const player = group.players[0]
     const source = snapshot.players.find(item => item.id === player.id)
@@ -77,7 +70,6 @@ function buildRows(snapshot: SharedPartySnapshot, claimedPlayerId = ''): MetricR
       he: formatNumber(consumedUnits),
       qian: formatNumber(totalSips / Math.max(snapshot.settings.unitToSip, 1)),
       titles: getTitles(player),
-      isMine: player.id === mineId,
     }
   })
 }
@@ -113,7 +105,6 @@ Page({
     unit: '瓶',
     unitToSip: 30,
     rows: [] as MetricRow[],
-    myRow: null as MetricRow | null,
     operations: [] as Array<{
       id: string
       time: string
@@ -122,26 +113,12 @@ Page({
       kind: 'add' | 'sub'
     }>,
     updatedAgoText: '刚刚',
-    showClaimPopup: false,
-    claimRows: [] as Array<{
-      id: string
-      name: string
-      claimedByOther: boolean
-      selected: boolean
-    }>,
-    selectedClaimId: '',
-    claimSaving: false,
   },
 
   onLoad(options: Record<string, string>) {
     ;(this as any)._partyViewVisible = true
-    const handoverCode = options.handover ? decodeURIComponent(options.handover) : ''
     const inviteCode = options.invite ? decodeURIComponent(options.invite) : ''
     const partyId = options.partyId ? decodeURIComponent(options.partyId) : ''
-    if (handoverCode) {
-      this.confirmHandover(handoverCode)
-      return
-    }
     if (inviteCode) {
       this.joinByCode(inviteCode)
       return
@@ -198,19 +175,19 @@ Page({
         if (!result.partyId) throw new Error('加入结果缺少聚会 ID')
         wx.setStorageSync(LAST_SHARED_PARTY_KEY, result.partyId)
         this.setData({ partyId: result.partyId, joining: false })
-        return this.refreshSnapshot(true, true).then(() => this.startPolling())
+        return this.refreshSnapshot(true).then(() => this.startPolling())
       })
       .catch(error => {
         this.setData({ joining: false, loading: false, errorMessage: readableError(error) })
       })
   },
 
-  refreshSnapshot(force = false, offerClaim = false): Promise<void> {
+  refreshSnapshot(force = false): Promise<void> {
     const partyId = this.data.partyId
     if (!partyId || (this as any)._snapshotLoading) return Promise.resolve()
     if (!(this as any)._membersResult) {
       return this.refreshMembership()
-        .then(() => this.refreshSnapshot(force, offerClaim))
+        .then(() => this.refreshSnapshot(force))
         .catch(error => this.handleSharedLoadError(error, force))
     }
     ;(this as any)._snapshotLoading = true
@@ -221,10 +198,7 @@ Page({
         if (!force && previousDigest && previousDigest === snapshot.contentDigest) return
         ;(this as any)._contentDigest = snapshot.contentDigest
         ;(this as any)._snapshotUpdatedAt = snapshot.updatedAt || Date.now()
-        const membersResult = (this as any)._membersResult as PartyMembersResult
-        const claimedPlayerId = membersResult?.me?.claimedPlayerId || ''
-        const rows = buildRows(snapshot, claimedPlayerId)
-        const myRow = rows.find(item => item.isMine) || null
+        const rows = buildRows(snapshot)
         const operations = snapshot.operations.map(operation => ({
           id: operation.id,
           time: operation.time || '--:--',
@@ -243,13 +217,11 @@ Page({
           unit: snapshot.settings.unit,
           unitToSip: snapshot.settings.unitToSip,
           rows,
-          myRow,
           operations,
           updatedAgoText: this.getUpdatedAgoText(),
         })
         ;(this as any)._snapshot = snapshot
         this.startUpdatedAgoTimer()
-        if (offerClaim && !claimedPlayerId) this.openClaimPopup()
       })
       .catch(error => {
         this.handleSharedLoadError(error, force)
@@ -260,15 +232,6 @@ Page({
   },
 
   handleSharedLoadError(error: unknown, force: boolean) {
-    if (isPartyCloudError(error, 'PARTY_HANDED_OVER') && error.data?.newPartyId) {
-      const newPartyId = error.data.newPartyId
-      wx.setStorageSync(LAST_SHARED_PARTY_KEY, newPartyId)
-      this.setData({ partyId: newPartyId })
-      ;(this as any)._contentDigest = ''
-      ;(this as any)._membersResult = null
-      setTimeout(() => this.refreshSnapshot(true), 0)
-      return
-    }
     if (force || !this.data.hasParty) {
       this.setData({ loading: false, errorMessage: readableError(error) })
     }
@@ -317,113 +280,5 @@ Page({
     if (seconds < 3) return '刚刚'
     if (seconds < 60) return `${seconds}秒前`
     return `${Math.floor(seconds / 60)}分钟前`
-  },
-
-  openClaimPopup() {
-    this.refreshMembership()
-      .then(() => this.showClaimPopupFromState())
-      .catch(error => wx.showToast({ title: readableError(error), icon: 'none' }))
-  },
-
-  showClaimPopupFromState() {
-    const snapshot = (this as any)._snapshot as SharedPartySnapshot | undefined
-    const membersResult = (this as any)._membersResult as PartyMembersResult | undefined
-    if (!snapshot || !membersResult) return
-    const claimedByOther = new Set(
-      membersResult.members
-        .filter(member => member.memberId !== membersResult.me.memberId && member.claimedPlayerId)
-        .map(member => member.claimedPlayerId as string),
-    )
-    const selectedClaimId = membersResult.me.claimedPlayerId || ''
-    this.setData({
-      showClaimPopup: true,
-      selectedClaimId,
-      claimRows: snapshot.players.map(player => ({
-        id: player.id,
-        name: player.name,
-        claimedByOther: claimedByOther.has(player.id),
-        selected: player.id === selectedClaimId,
-      })),
-    })
-  },
-
-  onClaimPopupChange(event: WechatMiniprogram.CustomEvent) {
-    if (!event.detail.visible && !this.data.claimSaving) {
-      this.setData({ showClaimPopup: false })
-    }
-  },
-
-  onCloseClaimPopup() {
-    if (!this.data.claimSaving) this.setData({ showClaimPopup: false })
-  },
-
-  onSelectClaim(event: WechatMiniprogram.TouchEvent) {
-    const playerId = String(event.currentTarget.dataset.id || '')
-    const row = this.data.claimRows.find(item => item.id === playerId)
-    if (!row || row.claimedByOther || this.data.claimSaving) return
-    this.setData({
-      selectedClaimId: playerId,
-      claimRows: this.data.claimRows.map(item => ({ ...item, selected: item.id === playerId })),
-    })
-  },
-
-  onSaveClaim() {
-    this.saveClaim(this.data.selectedClaimId)
-  },
-
-  onSkipClaim() {
-    this.saveClaim('')
-  },
-
-  saveClaim(playerId: string) {
-    if (this.data.claimSaving) return
-    this.setData({ claimSaving: true })
-    claimSharedPlayer(this.data.partyId, playerId)
-      .then(member => {
-        const membersResult = (this as any)._membersResult as PartyMembersResult | undefined
-        if (membersResult) {
-          ;(this as any)._membersResult = {
-            ...membersResult,
-            me: member,
-            members: membersResult.members.map(item => (
-              item.memberId === member.memberId ? member : item
-            )),
-          }
-        }
-        this.setData({ showClaimPopup: false, claimSaving: false })
-        ;(this as any)._contentDigest = ''
-        return this.refreshSnapshot(true)
-      })
-      .catch(error => {
-        this.setData({ claimSaving: false })
-        wx.showToast({ title: readableError(error), icon: 'none' })
-        if (isPartyCloudError(error, 'ALREADY_CLAIMED')) this.refreshSnapshot(true)
-      })
-  },
-
-  confirmHandover(handoverCode: string) {
-    this.setData({ loading: false })
-    wx.showModal({
-      title: '确认接管记账？',
-      content: '确认后会新建一份同内容的酒局，由你继续维护账本。原房主将立即失去写入权。',
-      confirmText: '确认接管',
-      confirmColor: '#E9921B',
-      success: result => {
-        if (!result.confirm) return
-        wx.showLoading({ title: '正在交接', mask: true })
-        confirmOwnershipTransfer(handoverCode)
-          .then(record => {
-            saveParty(record.party)
-            restorePartySetupFromParty(record.party)
-            wx.hideLoading()
-            wx.showToast({ title: '交接成功', icon: 'success' })
-            setTimeout(() => wx.redirectTo({ url: '/pages/record/record' }), 500)
-          })
-          .catch(error => {
-            wx.hideLoading()
-            wx.showModal({ title: '交接未完成', content: readableError(error), showCancel: false })
-          })
-      },
-    })
   },
 })

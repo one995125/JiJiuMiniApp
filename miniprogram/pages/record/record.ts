@@ -13,7 +13,6 @@
   normalizeStoredUnitToSip,
   hasLongSessionSharePrompted,
   markLongSessionSharePrompted,
-  clearParty,
 } from '../../utils/storage'
 import { deferStatusBarHeightUpdate } from '../../utils/system'
 import { SEO_COPY } from '../../utils/seo'
@@ -26,17 +25,12 @@ import {
 import { generatePartyPoster } from '../../utils/party-poster'
 import { PARTY_AUTO_END_PAUSE_THRESHOLD_MS } from '../../utils/party-lifecycle'
 import {
-  PartyMembersResult,
   SharedPartyMember,
-  cancelOwnershipTransfer,
   createPartyInvite,
   getActivePartyFromCloud,
-  initiateOwnershipTransfer,
-  isPartyCloudError,
   listPartyMembers,
   removePartyMember,
   saveActivePartyToCloud,
-  updateMemberClaim,
 } from '../../services/party-cloud'
 import {
   destroyInteractionSounds,
@@ -360,19 +354,6 @@ Component({
       isOwner: boolean
     }>,
     membersLoading: false,
-    pendingTransfer: null as PartyMembersResult['pendingTransfer'] | null,
-    handoverCode: '',
-    showMemberClaimPanel: false,
-    correctingMemberId: '',
-    correctingMemberName: '',
-    memberClaimRows: [] as Array<{
-      id: string
-      name: string
-      claimedByOther: boolean
-      selected: boolean
-    }>,
-    memberClaimSelectedId: '',
-    memberActionLoading: false,
   },
 
   pageLifetimes: {
@@ -445,7 +426,6 @@ Component({
         clearTimeout((this as any)._quickFeedbackTimer)
         ;(this as any)._quickFeedbackTimer = null
       }
-      this.stopHandoverPolling()
       ;(this as any)._titleUnlockEvents = []
       destroyInteractionSounds()
     },
@@ -2052,14 +2032,11 @@ Component({
     },
 
     buildPartyMemberRows(members: SharedPartyMember[]) {
-      const players = this.data.players as IPlayer[]
       return members.map(member => ({
         ...member,
-        claimedName: member.claimedPlayerId
-          ? (players.find(player => player.id === member.claimedPlayerId)?.name || '名单已变更')
-          : (member.role === 'owner'
-            ? '房主'
-            : `${member.displayName || '同桌成员'} · 未认领`),
+        claimedName: member.role === 'owner'
+          ? '房主'
+          : (member.displayName || '同桌成员'),
         isOwner: member.role === 'owner',
       }))
     },
@@ -2070,23 +2047,14 @@ Component({
       if (!options.silent) this.setData({ membersLoading: true })
       return listPartyMembers(partyId)
         .then(result => {
-          const updates: Record<string, any> = {
+          this.setData({
             partyMemberRows: this.buildPartyMemberRows(result.members),
-            pendingTransfer: result.pendingTransfer || null,
-          }
-          updates.handoverCode = result.handoverCode || ''
-          if (!options.silent) updates.membersLoading = false
-          this.setData(updates)
-          if (result.pendingTransfer) this.startHandoverPolling()
-          else this.stopHandoverPolling()
+            ...(options.silent ? {} : { membersLoading: false }),
+          })
         })
         .catch(error => {
-          if (!options.silent) this.setData({ membersLoading: false })
-          if (isPartyCloudError(error, 'PARTY_HANDED_OVER')) {
-            this.handlePartyHandedOver(String(error.data?.newPartyId || ''))
-            return
-          }
           if (!options.silent) {
+            this.setData({ membersLoading: false })
             wx.showToast({ title: String(error?.message || '成员列表加载失败'), icon: 'none' })
           }
         })
@@ -2121,77 +2089,6 @@ Component({
       })
     },
 
-    onOpenMemberClaim(event: WechatMiniprogram.TouchEvent) {
-      const memberId = String(event.currentTarget.dataset.memberId || '')
-      const member = this.data.partyMemberRows.find(item => item.memberId === memberId)
-      if (!member) return
-      const claimedByOther = new Set(
-        this.data.partyMemberRows
-          .filter(item => item.memberId !== memberId && item.claimedPlayerId)
-          .map(item => item.claimedPlayerId as string),
-      )
-      const selected = member.claimedPlayerId || ''
-      this.setData({
-        showMemberClaimPanel: true,
-        correctingMemberId: memberId,
-        correctingMemberName: member.claimedName,
-        memberClaimSelectedId: selected,
-        memberClaimRows: this.data.players.map((player: IPlayer) => ({
-          id: player.id,
-          name: player.name,
-          claimedByOther: claimedByOther.has(player.id),
-          selected: player.id === selected,
-        })),
-      })
-    },
-
-    onSelectMemberClaim(event: WechatMiniprogram.TouchEvent) {
-      const playerId = String(event.currentTarget.dataset.id || '')
-      const target = this.data.memberClaimRows.find(item => item.id === playerId)
-      if (!target || target.claimedByOther || this.data.memberActionLoading) return
-      this.setData({
-        memberClaimSelectedId: playerId,
-        memberClaimRows: this.data.memberClaimRows.map(item => ({
-          ...item,
-          selected: item.id === playerId,
-        })),
-      })
-    },
-
-    onMemberClaimPanelChange(event: WechatMiniprogram.CustomEvent) {
-      if (!event.detail.visible) this.onHideMemberClaim()
-    },
-
-    onHideMemberClaim() {
-      if (!this.data.memberActionLoading) this.setData({ showMemberClaimPanel: false })
-    },
-
-    onSaveMemberClaim() {
-      this.saveMemberClaim(this.data.memberClaimSelectedId)
-    },
-
-    onClearMemberClaim() {
-      this.saveMemberClaim('')
-    },
-
-    saveMemberClaim(playerId: string) {
-      const partyId = this.getCurrentPartyId()
-      const memberId = this.data.correctingMemberId
-      if (!partyId || !memberId || this.data.memberActionLoading) return
-      this.setData({ memberActionLoading: true })
-      updateMemberClaim(partyId, memberId, playerId)
-        .then(() => {
-          this.setData({ showMemberClaimPanel: false, memberActionLoading: false })
-          wx.showToast({ title: playerId ? '认领已更新' : '已取消认领', icon: 'success' })
-          return this.refreshPartyMembers({ silent: true })
-        })
-        .catch(error => {
-          this.setData({ memberActionLoading: false })
-          wx.showToast({ title: String(error?.message || '更新失败'), icon: 'none' })
-          this.refreshPartyMembers({ silent: true })
-        })
-    },
-
     onRemoveSharedMember(event: WechatMiniprogram.TouchEvent) {
       const memberId = String(event.currentTarget.dataset.memberId || '')
       const member = this.data.partyMemberRows.find(item => item.memberId === memberId)
@@ -2209,81 +2106,6 @@ Component({
               this.refreshPartyMembers({ silent: true })
             })
             .catch(error => wx.showToast({ title: String(error?.message || '移出失败'), icon: 'none' }))
-        },
-      })
-    },
-
-    onInitiateTransfer(event: WechatMiniprogram.TouchEvent) {
-      const memberId = String(event.currentTarget.dataset.memberId || '')
-      const member = this.data.partyMemberRows.find(item => item.memberId === memberId)
-      if (!member || member.isOwner || this.data.pendingTransfer) return
-      wx.showModal({
-        title: '转让记账权？',
-        content: `将记账权交给“${member.claimedName}”。对方确认后会新建酒局接管，原局立即停止写入。`,
-        confirmText: '发起转让',
-        confirmColor: '#E9921B',
-        success: result => {
-          if (!result.confirm) return
-          wx.showLoading({ title: '正在发起', mask: true })
-          initiateOwnershipTransfer(this.getCurrentPartyId(), memberId)
-            .then(transfer => {
-              wx.hideLoading()
-              this.setData({
-                pendingTransfer: transfer.pendingTransfer,
-                handoverCode: transfer.handoverCode,
-              })
-              this.startHandoverPolling()
-              wx.showToast({ title: '请发送确认卡片', icon: 'none' })
-            })
-            .catch(error => {
-              wx.hideLoading()
-              wx.showToast({ title: String(error?.message || '发起失败'), icon: 'none' })
-            })
-        },
-      })
-    },
-
-    onCancelTransfer() {
-      const pending = this.data.pendingTransfer
-      if (!pending) return
-      cancelOwnershipTransfer(this.getCurrentPartyId(), pending.transferId)
-        .then(() => {
-          this.setData({ pendingTransfer: null, handoverCode: '' })
-          this.stopHandoverPolling()
-          wx.showToast({ title: '已取消交接', icon: 'success' })
-        })
-        .catch(error => wx.showToast({ title: String(error?.message || '取消失败'), icon: 'none' }))
-    },
-
-    startHandoverPolling() {
-      this.stopHandoverPolling()
-      if (!this.data.pendingTransfer) return
-      ;(this as any)._handoverPollTimer = setInterval(() => {
-        this.refreshPartyMembers({ silent: true })
-      }, 4000)
-    },
-
-    stopHandoverPolling() {
-      if ((this as any)._handoverPollTimer) clearInterval((this as any)._handoverPollTimer)
-      ;(this as any)._handoverPollTimer = null
-    },
-
-    handlePartyHandedOver(newPartyId: string) {
-      if ((this as any)._handoverHandled) return
-      ;(this as any)._handoverHandled = true
-      this.stopHandoverPolling()
-      this.stopTimer()
-      if ((this as any)._cloudSyncTimer) clearTimeout((this as any)._cloudSyncTimer)
-      ;(this as any)._cloudSyncTimer = null
-      clearParty()
-      wx.showModal({
-        title: '记账权已交接',
-        content: '对方已确认接管。你现在只能查看同桌账本，原局不会再接受写入。',
-        showCancel: false,
-        confirmText: '查看账本',
-        success: () => {
-          const query = newPartyId ? `?partyId=${encodeURIComponent(newPartyId)}` : ''
-          wx.redirectTo({ url: `/pages/party-view/party-view${query}` })
         },
       })
     },
@@ -2348,10 +2170,6 @@ Component({
       }
       saveActivePartyToCloud(target)
         .catch(err => {
-          if (isPartyCloudError(err, 'PARTY_HANDED_OVER')) {
-            this.handlePartyHandedOver(String(err.data?.newPartyId || ''))
-            return
-          }
           console.error('[record cloud save] local only', err)
         })
     },
@@ -2402,13 +2220,6 @@ Component({
         return {
           title: '同桌账本已建好，点这里只读查看',
           path: `/pages/party-view/party-view?invite=${encodeURIComponent(this.data.inviteCode)}`,
-          imageUrl: SEO_COPY.shareImage,
-        }
-      }
-      if (shareType === 'party-handover' && this.data.handoverCode) {
-        return {
-          title: '房主邀请你接管这场聚会的记账',
-          path: `/pages/party-view/party-view?handover=${encodeURIComponent(this.data.handoverCode)}`,
           imageUrl: SEO_COPY.shareImage,
         }
       }
